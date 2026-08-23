@@ -1,0 +1,9 @@
+GLOBAL CERTIFIED c_E > 0.380557
+
+Price-derived noncentral bins: 170 / 170 PASS
+New central bins (85,86), mpmath.iv verifier: PASS
+New central bins (85,86), independent MPFR/C verifier: PASS
+Mean-bin coverage: 172 / 172
+Price upstream commit: 6bc610e40083ef61a40966dfb5d38612cabc4c5b
+
+All three verifier stages exited successfully at theorem target 0.380557.
