@@ -1,0 +1,473 @@
+\documentclass[11pt]{amsart}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{microtype}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+
+\DeclareMathOperator{\sinc}{sinc}
+\newcommand{\R}{\mathbb R}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\dd}{\,d}
+\newcommand{\one}{\mathbf 1}
+\newcommand{\Ctarget}{0.380557}
+
+\title{A Sharper Certified Lower Bound for Erd\H{o}s' Minimum-Overlap Problem}
+\author{Deng Haowen}
+\email{denghaowen59@gmail.com}
+\date{Draft, 23 August 2026}
+
+\begin{document}
+\begin{abstract}
+We prove the computer-assisted lower bound
+\[
+ c_E>0.380557
+\]
+for Erd\H{o}s' minimum-overlap constant.  The proof builds on the 172-bin
+mean-conditioned dual-certificate framework used by L. Price to certify
+$c_E>0.38055470$.  Price's two central mean bins are replaced by a single even
+dual certificate using the same second-moment and pointwise Fourier bounds,
+together with the Parseval energy inequality already present in White's
+Fourier-analytic approach.  The new center certificate has 69 nonzero rows.
+Its multipliers are treated as exact decimal rationals, and a standalone
+interval-arithmetic checker proves
+\[
+ \int_{-2}^{2}q_+(t)\,dt
+ \le 2.6277191078658615742268756
+ < \frac1{0.380557}.
+\]
+All noncentral bins in Price's published Arb verification have a larger margin;
+the worst of them has certified positive-part integral at most
+$2.627538530873375790\ldots$.  The optimizer used to discover the certificate
+is not part of the trusted proof path.
+\end{abstract}
+
+\maketitle
+
+\section{The problem and the continuous model}
+
+For a partition $A\sqcup B=\{1,\ldots,2N\}$ with $|A|=|B|=N$, define
+\[
+ r_{A,B}(m)=|\{(a,b)\in A\times B:a-b=m\}|,
+ \qquad
+ R(A,B)=\max_{m\in\Z}r_{A,B}(m),
+\]
+and put
+\[
+ c_E=\liminf_{N\to\infty}\frac1N
+ \min_{\substack{A\sqcup B=\{1,\ldots,2N\}\\|A|=|B|=N}}R(A,B).
+\]
+This is the asymptotic constant in Erd\H{o}s' minimum-overlap problem.
+White's Fourier-analytic formulation and subsequent certified computations use
+the following continuous model \cite{White2023,Price2026}.
+
+Let $\mathcal H$ be the set of measurable $h:[0,2]\to[0,1]$ with
+$\int_0^2h=1$.  Put $g=1-h$ on $[0,2]$ and extend both functions by zero to
+$\R$.  Define
+\[
+ p_h(t)=\int_{\R}h(x)g(x+t)\dd x,
+ \qquad -2\le t\le2.
+\]
+Then $p_h\ge0$, $\operatorname{supp}p_h\subset[-2,2]$, and
+$\int p_h=1$.  Set
+\[
+ c_{\mathrm{cont}}=\inf_{h\in\mathcal H}\|p_h\|_\infty.
+\]
+
+\begin{lemma}[Discrete-to-continuous reduction]\label{lem:discrete-continuous}
+One has $c_E\ge c_{\mathrm{cont}}$.
+\end{lemma}
+
+\begin{proof}
+Fix a partition $A\sqcup B=\{1,\ldots,2N\}$.  For
+$I_k=[(k-1)/N,k/N)$ define
+\[
+ h_N=\sum_{a\in A}\one_{I_a},\qquad
+ g_N=\sum_{b\in B}\one_{I_b}.
+\]
+Then $h_N\in\mathcal H$.  If $\tau(u)=(1-|u|)_+$, a direct convolution
+calculation gives
+\[
+ p_{h_N}(t)=\frac1N\sum_{a\in A,\,b\in B}
+ \tau\bigl(Nt-(b-a)\bigr).
+\]
+For fixed real $x$, at most two of the numbers $\tau(x-d)$, $d\in\Z$, are
+nonzero, and their sum is at most $1$.  Grouping the preceding sum by the
+integer $d=b-a$ therefore gives
+\[
+ p_{h_N}(t)\le \frac1N\max_d
+ |\{(a,b)\in A\times B:b-a=d\}|=\frac{R(A,B)}N.
+\]
+Taking the supremum in $t$, then the minimum over partitions and finally the
+liminf proves the claim.
+\end{proof}
+
+Hence it is enough to prove a strict lower bound for every admissible overlap
+density $p=p_h$.
+
+\section{Three analytic constraints used in the center certificate}
+
+Fix $h\in\mathcal H$, write $p=p_h$, and define its first moment
+\[
+ \mu=\int_{-2}^{2}t p(t)\dd t.
+\]
+If $X$ has density $h$, the constraints $0\le h\le1$ and $\int h=1$ imply
+$1/2\le\mathbb E X\le3/2$ by the elementary rearrangement principle (the
+first moment is minimized by $h=\one_{[0,1]}$ and maximized by
+$h=\one_{[1,2]}$).  Since $\mathbb E Y=2-\mathbb E X$ for the complementary
+density $g$, it follows that $\mu=\mathbb E(Y-X)=2-2\mathbb E X\in[-1,1]$.
+
+\subsection{The second moment}
+
+\begin{lemma}\label{lem:second-moment}
+For every admissible $p$,
+\[
+ \int_{-2}^{2}t^2p(t)\dd t=\frac23+\frac{\mu^2}{2}.
+\]
+In particular, if $|\mu|\le1/320$, then
+\[
+ \int t^2p(t)\dd t\le
+ B_2:=\frac23+\frac{1}{2\cdot320^2}.
+\]
+\end{lemma}
+
+\begin{proof}
+Let $X,Y$ be independent random variables with densities $h,g$ respectively.
+Then $p$ is the density of $Y-X$.  Since $h+g=1$ on $[0,2]$,
+\[
+ \mathbb E X+\mathbb E Y=\int_0^2x\dd x=2,
+ \qquad
+ \mathbb E X^2+\mathbb E Y^2=\int_0^2x^2\dd x=\frac83.
+\]
+Moreover $\mu=\mathbb E(Y-X)$, hence
+$\mathbb E X=1-\mu/2$ and $\mathbb E Y=1+\mu/2$.  Independence now gives
+\[
+ \mathbb E(Y-X)^2
+ =\frac83-2\mathbb E X\,\mathbb E Y
+ =\frac83-2\left(1-\frac{\mu^2}{4}\right)
+ =\frac23+\frac{\mu^2}{2}.
+\]
+\end{proof}
+
+\subsection{Pointwise Fourier upper bounds}
+
+For real $\xi$ define centered transforms
+\[
+ H(\xi)=\int_0^2h(x)e^{i\xi(x-1)}\dd x,
+ \qquad
+ G(\xi)=\int_0^2g(x)e^{i\xi(x-1)}\dd x.
+\]
+Let
+\[
+ C_\xi=\int_{-2}^{2}p(t)\cos(\xi t)\dd t,
+ \qquad
+ \sinc\xi=\begin{cases}\sin\xi/\xi,&\xi\ne0,\\1,&\xi=0.\end{cases}
+\]
+Then
+\[
+ H(\xi)+G(\xi)=2\sinc\xi,
+ \qquad
+ \int p(t)e^{i\xi t}\dd t=\overline{H(\xi)}G(\xi).
+\]
+
+\begin{lemma}\label{lem:cos-upper}
+For every $\xi\in\R$,
+\[
+ C_\xi\le \sinc^2\xi.
+\]
+\end{lemma}
+
+\begin{proof}
+Write $H-G=a+ib$ with $a,b\in\R$ and $\sigma=\sinc\xi$.  Since $H+G=2\sigma$,
+\[
+ \overline HG
+ =\sigma^2-\frac{a^2+b^2}{4}-i\sigma b.
+\]
+Taking real parts gives the result.
+\end{proof}
+
+\subsection{White's Parseval energy constraint}
+
+The following is the form of White's Parseval constraint that is useful in the
+mean-bin certificate.  We include the short derivation to fix normalization.
+
+\begin{lemma}[Parseval row]\label{lem:parseval}
+For every positive integer $M$,
+\[
+ -\sum_{n=1}^{M} C_{n\pi}\le\frac12.
+\]
+\end{lemma}
+
+\begin{proof}
+At $\xi=n\pi$ with $n\ne0$, one has $H(\xi)+G(\xi)=0$, hence
+\[
+ C_{n\pi}=\operatorname{Re}(\overline{H(n\pi)}G(n\pi))
+ =-|H(n\pi)|^2.
+\]
+The functions $e^{in\pi u}/\sqrt2$, $n\in\Z$, form an orthonormal basis of
+$L^2([-1,1])$.  Parseval applied to $u\mapsto h(u+1)$ yields
+\[
+ \sum_{n\in\Z}|H(n\pi)|^2=2\int_0^2h(x)^2\dd x\le2\int_0^2h(x)\dd x=2.
+\]
+Because $H(0)=1$ and $|H(-n\pi)|=|H(n\pi)|$,
+\[
+ 1+2\sum_{n=1}^{\infty}|H(n\pi)|^2\le2.
+\]
+Thus $\sum_{n\ge1}|H(n\pi)|^2\le1/2$, and every finite truncation satisfies
+\[
+ -\sum_{n=1}^{M}C_{n\pi}
+ =\sum_{n=1}^{M}|H(n\pi)|^2\le\frac12.
+\]
+\end{proof}
+
+\begin{remark}\label{rem:not-new}
+Lemma~\ref{lem:parseval} is not claimed as a new inequality.  It is the
+Parseval energy restriction already used by White \cite{White2023}, rewritten
+in the Fourier coefficients $C_\xi$ of the overlap density.  The contribution
+of the present certificate is to combine this global energy row with Price's
+mean-conditioned dual-certificate framework \cite{Price2026}.
+\end{remark}
+
+\section{The dual-certificate principle}
+
+\begin{lemma}[Positive-part dual bound]\label{lem:dual}
+Suppose an admissible density $p$ satisfies finitely many linear inequalities
+\[
+ \int_{-2}^{2}p(t)\phi_j(t)\dd t\le B_j,
+ \qquad j=1,\ldots,r.
+\]
+For arbitrary multipliers $\lambda_j\ge0$, define
+\[
+ q(t)=1+\sum_{j=1}^r\lambda_j(B_j-\phi_j(t)),
+ \qquad q_+(t)=\max(q(t),0).
+\]
+Then
+\[
+ \|p\|_\infty\ge\frac{1}{\int_{-2}^{2}q_+(t)\dd t}.
+\]
+\end{lemma}
+
+\begin{proof}
+Since $\int p=1$ and every multiplier is nonnegative,
+\[
+ \int pq
+ =1+\sum_j\lambda_j\left(B_j-\int p\phi_j\right)\ge1.
+\]
+As $p\ge0$,
+\[
+ 1\le\int pq\le\int pq_+
+ \le\|p\|_\infty\int q_+.
+\]
+\end{proof}
+
+\section{A replacement certificate for the two central mean bins}
+
+Price's certificate partitions the possible mean $\mu$ into $172$ bins.  Its
+unique worst pair is
+\[
+ I_-=[-0.003125,0]=[-1/320,0],
+ \qquad
+ I_+=[0,0.003125]=[0,1/320].
+\]
+The certificate accompanying the present note replaces precisely these two
+bins.  It uses only the following valid rows:
+\[
+ \phi_2(t)=t^2,\qquad B_2=\frac23+\frac1{2\cdot320^2},
+\]
+\[
+ \phi_\xi(t)=\cos(\xi t),\qquad B_\xi=\sinc^2\xi,
+\]
+and, with $M=100$,
+\[
+ \phi_P(t)=-\sum_{n=1}^{100}\cos(n\pi t),
+ \qquad B_P=\frac12.
+\]
+The first row is valid on both bins by Lemma~\ref{lem:second-moment}, the second
+by Lemma~\ref{lem:cos-upper}, and the third by Lemma~\ref{lem:parseval}.
+
+The machine-readable file \texttt{certificate/center\_certificate.json}
+contains $69$ nonzero multipliers: one second-moment multiplier, $67$ cosine
+multipliers, and one Parseval multiplier.  Decimal strings are interpreted as
+exact rational numbers.  All multipliers are nonnegative.  The resulting
+function has the explicit form
+\begin{align*}
+ q(t)=1
+ &+\lambda_2(B_2-t^2)
+ +\sum_{\xi\in\Xi}\lambda_\xi\bigl(B_\xi-\cos(\xi t)\bigr)\\
+ &+\lambda_P\left(\frac12+\sum_{n=1}^{100}\cos(n\pi t)\right),
+\end{align*}
+where $\Xi$ and all multipliers are exactly those in the JSON file.  In
+particular, $q$ is even, so a single certificate covers both $I_-$ and $I_+$.
+
+\subsection{Rigorous evaluation of the positive part}
+
+The checker \texttt{code/verify\_center\_chunked.py} does not trust the LP
+solver that found the multipliers.  It reconstructs the certificate from the
+JSON file and verifies the following facts independently.
+
+For every cosine row it recomputes an interval enclosure of $\sinc^2\xi$ using
+\texttt{mpmath.iv} at 45 decimal digits, then rounds the upper endpoint upward
+again to a rational decimal.  Replacing $B_\xi$ by a larger number can only
+weaken the dual certificate, so this preserves validity.  The $t^2$ and
+Parseval right-hand sides are rational and are evaluated exactly.
+
+The checker writes $q$ and its elementary antiderivative $Q$ explicitly.  It
+works on $[0,2]$ and uses evenness at the end.  On an interval $J=[a,b]$ with
+center $c$ and radius $r$, interval arithmetic encloses $q(c)$, $q'(c)$ and
+$q''(c)$, while a global interval bound $M_3$ encloses
+$\sup_{[-2,2]}|q'''|$.  Taylor's theorem therefore gives the certified enclosure
+\[
+ q(c)-|q'(c)|r-\frac{|q''(c)|}{2}r^2-\frac{M_3}{6}r^3
+ \le q(x)\le
+ q(c)+|q'(c)|r+\frac{|q''(c)|}{2}r^2+\frac{M_3}{6}r^3
+\]
+for every $x\in J$, with every displayed numerical quantity replaced in the
+program by an outward interval bound.
+
+If the certified upper endpoint is nonpositive, $J$ contributes zero.  If the
+certified lower endpoint is positive, $q_+=q$ on $J$ and the checker adds an
+outward-rounded upper bound for $Q(b)-Q(a)$.  Otherwise it bisects $J$; once the
+width is at most $2\cdot10^{-5}$, it conservatively charges the entire cell by
+$(b-a)\max(0,U_J)$, where $U_J$ is the certified upper bound for $q$ on the cell.
+A floating-point root search is used only to propose an initial subdivision and
+has no logical role: a missed root is still covered by the interval test and
+bisection.
+
+A fresh 45-digit run on the files archived with this note terminated with
+\begin{verbatim}
+FINAL Dupper 2.6277191078658615742268756
+TARGET 2.6277272524221075949200776756175815975...
+MARGIN 0.0000081445562460206932020756175815975...
+CERTIFIED True
+\end{verbatim}
+Thus
+\begin{equation}\label{eq:center-D}
+ \int_{-2}^{2}q_+(t)\dd t
+ \le2.6277191078658615742268756
+ <\frac1{0.380557}.
+\end{equation}
+By Lemma~\ref{lem:dual}, every admissible overlap density whose mean belongs to
+$I_-\cup I_+$ satisfies
+\[
+ \|p\|_\infty>0.380557.
+\]
+
+\section{The noncentral bins and the global theorem}
+
+For all other mean bins we reuse Price's published Arb-certified bounds
+\cite{Price2026}.  The two old central rows (indices 85 and 86) are the only ones
+whose certified positive-part integrals exceed the threshold needed here.  Among
+all remaining bins, the largest published certified value occurs at bin 77
+(and, by symmetry, bin 94):
+\begin{equation}\label{eq:old-noncentral}
+ D_{\mathrm{noncentral}}
+ \le2.6275385308733757900902721758784\ldots.
+\end{equation}
+In particular,
+\[
+ \frac1{D_{\mathrm{noncentral}}}
+ \ge0.3805843333028524\ldots>0.380557.
+\]
+The neighboring bins 84 and 87 already have
+$D\le2.627336460420282\ldots$, so the replacement of bins 85--86 leaves no gap
+in the mean cover.
+
+\begin{theorem}\label{thm:main}
+The Erd\H{o}s minimum-overlap constant satisfies
+\[
+ \boxed{c_E>0.380557}.
+\]
+\end{theorem}
+
+\begin{proof}
+Let $h\in\mathcal H$ and $p=p_h$.  Its mean $\mu$ lies in $[-1,1]$, which is
+covered by Price's 172 mean bins.  If $\mu\in I_-\cup I_+$, the new center
+certificate and \eqref{eq:center-D} give $\|p\|_\infty>0.380557$.  Otherwise,
+Price's certified noncentral bin containing $\mu$, together with
+\eqref{eq:old-noncentral} and Lemma~\ref{lem:dual}, gives the same strict lower
+bound.  Hence $c_{\mathrm{cont}}>0.380557$.  Lemma
+\ref{lem:discrete-continuous} yields $c_E\ge c_{\mathrm{cont}}>0.380557$.
+\end{proof}
+
+\section{Reproducibility and trust model}
+
+The new mathematical content that must be checked beyond the cited Price
+certificate is small: Lemmas \ref{lem:second-moment}, \ref{lem:cos-upper},
+\ref{lem:parseval}, the dual Lemma \ref{lem:dual}, and the finite center
+certificate.  The optimization procedure that discovered the multipliers is
+not needed to verify the theorem.
+
+The trusted path for the center calculation consists of:
+\begin{itemize}
+\item exact Python integer and \texttt{Fraction} arithmetic for rational data;
+\item arbitrary-precision interval operations, including interval sine and
+cosine, in \texttt{mpmath.iv};
+\item the finite subdivision and Taylor argument implemented in the checker.
+\end{itemize}
+Ordinary floating-point root finding and the LP solver are explicitly outside
+the trusted path.  The repository records SHA-256 hashes for the certificate,
+checker, paper source and verification transcript.
+
+As a second software implementation, the release also contains
+\texttt{code/verify\_center\_mpfr.c}.  This checker calls MPFR directly with
+explicit directed rounding, uses no \texttt{mpmath}, NumPy, SciPy, Arb, or root
+finder, and starts from a dyadic subdivision of $[0,2]$.  It certifies signs
+using an independent quadratic Taylor enclosure and evaluates positive cells
+with its own outward-rounded antiderivative calculation.  At both 256-bit and
+384-bit precision it proves
+\[
+ \int_{-2}^{2}q_+(t)\dd t
+ \le 2.62772268405113257247485152716856\ldots
+ <\frac1{0.380557},
+\]
+and terminates with \texttt{CERTIFIED True}.  Thus the new center certificate
+has been checked by two independent software implementations.  This is not yet
+an external third-party audit; independent reproduction by another researcher
+remains desirable before using that stronger description.
+
+\paragraph{Use of AI.}
+Computational exploration, certificate search, and parts of the initial
+exposition were carried out with substantial assistance from OpenAI's ChatGPT.
+The language model is not part of the trusted proof path.  The human author is
+responsible for the claims and should review the final manuscript and code before
+submission.
+
+\begin{thebibliography}{9}
+
+\bibitem{White2023}
+E. P. White,
+\emph{A new bound for Erd\H{o}s' minimum overlap problem},
+Acta Arith. \textbf{208} (2023), 235--255.
+\href{https://doi.org/10.4064/aa220728-7-6}{doi:10.4064/aa220728-7-6}.
+Preprint: \href{https://arxiv.org/abs/2201.05704}{arXiv:2201.05704}.
+
+\bibitem{Price2026}
+L. Price,
+\emph{A Certified Lower Bound for Minimum Overlap},
+proof note and reproducible Arb certificate for $c_E>0.38055470$,
+29 June 2026.
+\url{https://github.com/Leeham06972452/erdos-36-lower-bound}.
+
+\bibitem{Occisn2026}
+occisn,
+\emph{Independent verification of the $0.38055470$ minimum-overlap certificate},
+2026.
+\url{https://github.com/occisn/erdos-36-certified-lower-bound}.
+
+\bibitem{KimPilanci2026}
+S. Kim and M. Pilanci,
+\emph{AI-Assisted Discovery of Convex Relaxations via Dual Agents},
+2026.
+\href{https://arxiv.org/abs/2606.31182}{arXiv:2606.31182}.
+
+\end{thebibliography}
+
+\end{document}
