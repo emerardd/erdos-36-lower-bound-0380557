@@ -119,4 +119,17 @@ jobs:
             exit 0
           fi
           git commit -m 'Record full 172-bin theorem-target verification'
-          git push origin HEAD:main
+
+          # Another workflow may have advanced main while this job was running.
+          # Rebase the generated report commit onto the latest main before pushing.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push race on attempt ${attempt}; retrying..."
+            sleep 2
+          done
+          echo 'Could not push verification reports after three retries.' >&2
+          exit 1
