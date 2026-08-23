@@ -1,0 +1,37 @@
+name: Check vendored Price reports at target 0.380557
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/check-vendored-price-reports.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check all 170 noncentral Arb report balls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python code/check_vendored_price_reports.py | tee verification/VENDORED_PRICE_REPORT_CHECK_0380557.txt
+      - name: Commit report
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add verification/VENDORED_PRICE_REPORT_CHECK_0380557.txt
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Record vendored Price report check at 0.380557'
+          git push origin HEAD:main
