@@ -1,0 +1,50 @@
+{
+  "statement": "Arb ball-arithmetic verification at theorem target c > 0.38055470",
+  "target": "0.38055470",
+  "proved_all_bins": true,
+  "bin_ranges_verified": [
+    [
+      0,
+      84
+    ],
+    [
+      85,
+      88
+    ],
+    [
+      89,
+      171
+    ]
+  ],
+  "row_coverage": "0..171 exactly",
+  "worst_bin_index": 85,
+  "worst_bin": [
+    "-0.003125",
+    "-0.0"
+  ],
+  "worst_D_upper_ball": "[2.62774311482846645939819018339449857080232449839865340139440 +/- 6.60e-61]",
+  "worst_D_upper_bound_including_reported_radius_decimal": "2.627743114828466459398190183394498570802324498398653401394400660",
+  "target_D_decimal": "2.6277431339042718431804941576073032339371974646483146838023548257320169741695477680343982087200604801359699407",
+  "D_margin_decimal": "1.90758053837823039742128046631348729662496612824079541657320169741695477680343982087200604801359699407E-8",
+  "inverse_worst_D_upper_bound_decimal": "0.38055470276259401237458368772220489926456967965679470955827690763950453612958247345867463051771252116633685163",
+  "certified_lower_bound_ball_from_worst_chunk": "[0.38055470276259401237458368772220489926456968 +/- 7.31e-45]",
+  "total_nodes": 379569,
+  "total_ambiguous_cells": 46483,
+  "max_speed_roots": 200,
+  "arb_precision_bits": 160,
+  "cell_width": "0.0001",
+  "root_pad": 0.0001,
+  "samples": 120001,
+  "rhs_inflate": "1e-14",
+  "chunk_reports": [
+    "arb_0_84_0380554700.json",
+    "arb_85_88_0380554700.json",
+    "arb_89_171_0380554700.json"
+  ],
+  "chunk_csvs": [
+    "arb_0_84_0380554700.csv",
+    "arb_85_88_0380554700.csv",
+    "arb_89_171_0380554700.csv"
+  ],
+  "combiner_note": "For each printed Arb ball [m +/- r], comparisons use m+r."
+}
