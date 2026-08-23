@@ -1,0 +1,122 @@
+name: Verify global bound c_E > 0.380557
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-global.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Price verifier dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r vendor/price/certificate/requirements.txt
+
+      - name: Reverify all 170 noncentral Price bins at theorem target
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p verification
+          python vendor/price/certificate/prove_erdos_0380554275_arb.py \
+            vendor/price/certificate/erdos_aug_central_gridF400.json \
+            --target 0.380557 \
+            --only-bins '0-84,87-171' \
+            --csv verification/ci_price_noncentral_0380557.csv \
+            --json-report verification/ci_price_noncentral_0380557.json \
+            2>&1 | tee verification/ci_price_noncentral_0380557.log
+
+      - name: Install new-center verifier dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r requirements.txt
+
+      - name: Reverify new center with mpmath interval checker
+        shell: bash
+        run: |
+          set -euo pipefail
+          python code/run_center_verification.py 2>&1 | tee verification/ci_center_mpmath.txt
+          grep -q 'CERTIFIED True' verification/ci_center_mpmath.txt
+
+      - name: Install MPFR development library
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libmpfr-dev libgmp-dev
+
+      - name: Reverify new center with independent MPFR/C checker
+        shell: bash
+        run: |
+          set -euo pipefail
+          python code/check_mpfr_certificate_match.py | tee verification/ci_mpfr_certificate_match.txt
+          grep -q 'MATCH True' verification/ci_mpfr_certificate_match.txt
+          bash code/run_mpfr_verification.sh 2>&1 | tee verification/ci_center_mpfr.txt
+          test "$(grep -c 'CERTIFIED True' verification/ci_center_mpfr.txt)" -ge 2
+
+      - name: Check coverage and write global summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          p = json.loads(Path('verification/ci_price_noncentral_0380557.json').read_text())
+          expected = list(range(0,85)) + list(range(87,172))
+          checked = [int(x) for x in p['checked_bins']]
+          assert checked == expected, (checked[:5], checked[-5:], len(checked))
+          assert p['proved_all_checked_bins'] is True
+          assert str(p['target']) == '0.380557'
+
+          center1 = Path('verification/ci_center_mpmath.txt').read_text()
+          center2 = Path('verification/ci_center_mpfr.txt').read_text()
+          assert 'CERTIFIED True' in center1
+          assert center2.count('CERTIFIED True') >= 2
+
+          upstream = Path('vendor/price/UPSTREAM_COMMIT.txt').read_text().strip()
+          summary = f'''GLOBAL CERTIFIED c_E > 0.380557\n\nPrice-derived noncentral bins: 170 / 170 PASS\nNew central bins (85,86), mpmath.iv verifier: PASS\nNew central bins (85,86), independent MPFR/C verifier: PASS\nMean-bin coverage: 172 / 172\nPrice upstream commit: {upstream}\n\nAll three verifier stages exited successfully at theorem target 0.380557.\n'''
+          Path('verification/GLOBAL_CERTIFICATION_0380557.txt').write_text(summary)
+          print(summary)
+          PY
+
+      - name: Commit verification reports
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add verification/ci_price_noncentral_0380557.csv \
+                  verification/ci_price_noncentral_0380557.json \
+                  verification/ci_price_noncentral_0380557.log \
+                  verification/ci_center_mpmath.txt \
+                  verification/ci_mpfr_certificate_match.txt \
+                  verification/ci_center_mpfr.txt \
+                  verification/GLOBAL_CERTIFICATION_0380557.txt
+          if git diff --cached --quiet; then
+            echo 'No verification report changes.'
+            exit 0
+          fi
+          git commit -m 'Record full 172-bin theorem-target verification'
+          git push origin HEAD:main
