@@ -76,3 +76,22 @@ cd vendor/price/certificate && sed 's/\r$//' SHA256SUMS.txt | sha256sum -c
 The repository sets `* -text` in `.gitattributes`.  Without it, a clone on
 Windows converts line endings on checkout and every one of these manifests
 fails for reasons that have nothing to do with the mathematics.
+
+## paper.pdf
+
+pdfTeX stamps a creation time and a trailer ID into its output, so two builds of
+the same source normally differ byte for byte and no fixed hash could ever be
+checked.  `code/build_paper.sh` pins `SOURCE_DATE_EPOCH` to the paper's date and
+sets `FORCE_SOURCE_DATE=1`, which makes the output deterministic.  Two builds
+here produce the identical file, and that is the file hashed in
+`SHA256SUMS.txt`.
+
+Build it with the script, not with a bare `pdflatex paper.tex`:
+
+```bash
+bash code/build_paper.sh
+```
+
+A bare `pdflatex` run yields the same document but a different hash.  That is
+expected and is not a discrepancy.  Different TeX distributions and versions
+will also differ; the release PDF was produced with MiKTeX 25.12 (pdfTeX 4.23).

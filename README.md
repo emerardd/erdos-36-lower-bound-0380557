@@ -52,8 +52,11 @@ dual-certificate framework, allowing the two binding center bins to be improved.
 
 ## Files
 
-- `paper.tex` - complete proof note.  Build `paper.pdf` with
-  `pdflatex paper.tex` (run it twice so the cross-references settle).
+- `paper.tex` / `paper.pdf` - complete proof note.  Rebuild the PDF with
+  `bash code/build_paper.sh`, which pins `SOURCE_DATE_EPOCH` so the output is
+  byte-identical to the hash in `SHA256SUMS.txt`.  A plain `pdflatex paper.tex`
+  produces the same document but a different file, because pdfTeX stamps the
+  build time into it.
 - `certificate/center_certificate.json` - 69 nonzero exact-decimal dual multipliers.
 - `code/verify_center_chunked.py` - interval verifier, checkpointed in short chunks.
 - `code/run_center_verification.py` - one-command wrapper for the Python verifier.
@@ -64,6 +67,7 @@ dual-certificate framework, allowing the two binding center bins to be improved.
 - `code/check_vendored_price_reports.py` - checks the archived upstream Arb
   balls against the stronger target.
 - `code/make_sha256sums.sh` - regenerates the root `SHA256SUMS.txt`.
+- `code/build_paper.sh` - reproducible build of `paper.pdf`.
 - `verification/center_result.txt` - fresh 45-digit verification transcript.
 - `verification/REPRODUCIBILITY_NOTES.md` - **what is reproducible and to how
   many digits.  Read this before reporting a mismatch.**
