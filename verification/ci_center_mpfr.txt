@@ -18,7 +18,7 @@ ambiguous_terminal_cells: 2937
 base_depth: 7
 terminal_depth: 14
 max_stack: 128
-elapsed_cpu_seconds: 15.358168
+elapsed_cpu_seconds: 12.939123
 CERTIFIED True
 == MPFR 384-bit run ==
 nodes=10000 stack=4 pos=996 neg=1135 amb=2931 Dhalf<=1.3138612731826216
@@ -35,6 +35,6 @@ ambiguous_terminal_cells: 2937
 base_depth: 7
 terminal_depth: 14
 max_stack: 128
-elapsed_cpu_seconds: 19.284580
+elapsed_cpu_seconds: 16.795753
 CERTIFIED True
 Both MPFR runs certified the target.
