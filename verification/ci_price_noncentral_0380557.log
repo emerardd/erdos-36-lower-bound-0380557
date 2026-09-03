@@ -180,6 +180,6 @@ Arb verification summary
   total_nodes: 300267
   total_ambiguous_cells: 11105
   max_speed_roots: 46
-  elapsed_seconds: 43.00809955596924
+  elapsed_seconds: 42.701056718826294
   arb_precision_bits: 160
 SUCCESS: every checked bin certifies the target.
