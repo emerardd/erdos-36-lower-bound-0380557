@@ -186,7 +186,7 @@
   "total_nodes": 300267,
   "total_ambiguous_cells": 11105,
   "max_speed_roots": 46,
-  "elapsed_seconds": 32.553088665008545,
+  "elapsed_seconds": 41.76662492752075,
   "arb_precision_bits": 160,
   "cell_width": "0.0001",
   "root_pad": 0.0001,
