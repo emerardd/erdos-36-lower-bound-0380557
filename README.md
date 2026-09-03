@@ -9,6 +9,8 @@ c_E > 0.380557
 
 for Erdős' minimum-overlap problem.
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22279894.svg)](https://doi.org/10.5281/zenodo.22279894)
+
 ## Status
 
 The center certificate has now been verified by **two separate interval-arithmetic implementations**.
@@ -159,6 +161,15 @@ Treat it as a convenience, not as a verification path.
 ## Repository
 
 Canonical repository: https://github.com/emerardd/erdos-36-lower-bound-0380557
+
+Archived on Zenodo. Cite the concept DOI, which always resolves to the
+latest version:
+
+```text
+10.5281/zenodo.22279894
+```
+
+The DOI for this specific release is 10.5281/zenodo.22279895.
 
 The verification package is frozen at the tagged release; external reproduction
 is invited. If you reproduce, or fail to reproduce, any part of it, please open

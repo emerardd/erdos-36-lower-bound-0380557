@@ -1,13 +1,14 @@
 cff-version: 1.2.0
 message: "If you use this certificate or code, please cite the associated preprint."
 title: "A Sharper Certified Lower Bound for Erdős' Minimum-Overlap Problem"
-version: "1.0.0"
+version: "1.0.1"
 date-released: "2026-08-23"
 authors:
   - family-names: "Deng"
     given-names: "Haowen"
     email: "denghaowen59@gmail.com"
     # orcid: "https://orcid.org/0000-0000-0000-0000"
+doi: "10.5281/zenodo.22279894"
 repository-code: "https://github.com/emerardd/erdos-36-lower-bound-0380557"
 license: MIT
 keywords:
