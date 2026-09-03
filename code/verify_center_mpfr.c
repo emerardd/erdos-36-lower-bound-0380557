@@ -7,19 +7,33 @@ classification. Positive cells are integrated by the exact elementary
 antiderivative of q, with interval evaluation at the endpoints.
 
 Build on Linux with:
-    gcc -O3 verify_center_mpfr.c -o verify_center_mpfr -Wl,-l:libmpfr.so.6 -lm
+    gcc -O3 verify_center_mpfr.c -o verify_center_mpfr -lmpfr -lgmp -lm
 
-This source declares the small part of the MPFR ABI it uses so that it can be
-built even when the development header is not installed. The struct layout and
-function signatures match MPFR 4.x on the supported 64-bit Linux ABI.
+By default this file includes the real <mpfr.h>, so the compiler type-checks
+every call against the MPFR actually installed.  That is the configuration you
+should use.
+
+If the MPFR development header is unavailable, define MPFR_SELFDECL to fall
+back on the hand-written declarations below and link the shared object
+directly:
+
+    gcc -O3 -DMPFR_SELFDECL verify_center_mpfr.c -o verify_center_mpfr \
+        -Wl,-l:libmpfr.so.6 -lm
+
+Be aware that the fallback hard-codes the mpfr_t struct layout and assumes
+64-bit limbs, i.e. MPFR 4.x on the LP64 Linux ABI.  On any other ABI the
+mismatch is silent memory corruption rather than a compile error, so the
+fallback is a convenience, not a supported verification path.
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
 
+#ifdef MPFR_SELFDECL
 typedef unsigned long mp_limb_t;
 typedef long mpfr_prec_t;
 typedef int mpfr_sign_t;
@@ -54,6 +68,9 @@ extern int mpfr_cmp_si(mpfr_srcptr, long);
 extern double mpfr_get_d(mpfr_srcptr, mpfr_rnd_t);
 extern char *mpfr_get_str(char*, mpfr_exp_t*, int, size_t, mpfr_srcptr, mpfr_rnd_t);
 extern void mpfr_free_str(char*);
+#else
+#include <mpfr.h>
+#endif
 
 #ifndef PREC
 #define PREC 256

@@ -2,6 +2,24 @@ MIT License
 
 Copyright (c) 2026 Deng Haowen
 
+SCOPE OF THIS LICENSE
+
+This MIT license covers only the material authored for this repository:
+`paper.tex`, `certificate/`, `code/`, `templates/`, and the repository's own
+verification transcripts under `verification/`.
+
+It does NOT cover the contents of `vendor/`.  The `vendor/price/` directory is
+a byte-for-byte redistribution of the `certificate/` directory of Liam Price's
+public repository `Leeham06972452/erdos-36-lower-bound`, pinned at the commit
+recorded in `vendor/price/UPSTREAM_COMMIT.txt`.  That material is the work of
+its original author, is included here for provenance and reproducibility, and
+is redistributed unmodified with attribution.  At the time of vendoring the
+upstream repository carried no explicit license file; no license is claimed or
+granted over it by this repository, and all rights in it remain with its
+author.  Anyone wishing to reuse the vendored material beyond inspection and
+verification should obtain terms from the original author, whose repository is
+linked in `vendor/price/README.md`.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights

@@ -1,10 +1,13 @@
 name: Vendor Price certificate package
 
+# This workflow rewrites vendor/ and pushes to main, so it deliberately does
+# not run on pull requests.  Re-vendoring is an explicit maintainer action.
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/vendor-price.yml'
+      - '.github/vendor-price-README.md'
   workflow_dispatch:
 
 permissions:
@@ -31,23 +34,18 @@ jobs:
           cp -a /tmp/price/certificate vendor/price/certificate
           cp /tmp/price/README.md vendor/price/UPSTREAM_README.md
           printf '%s\n' "$UPSTREAM_COMMIT" > vendor/price/UPSTREAM_COMMIT.txt
-          cat > vendor/price/README.md <<'EOF'
-          # Vendored Price certificate package
-
-          This directory is a byte-for-byte copy of the `certificate/` directory
-          from Liam Price's public repository `Leeham06972452/erdos-36-lower-bound`,
-          pinned at the commit recorded in `UPSTREAM_COMMIT.txt`.
-
-          The files are included for reproducibility and provenance.  The noncentral
-          mean-bin certificates are due to Price.  This repository's new contribution
-          replaces only bins 85 and 86 with the hybrid Parseval certificate.
-          EOF
+          cp "$GITHUB_WORKSPACE/.github/vendor-price-README.md" vendor/price/README.md
 
       - name: Record vendored hashes
         shell: bash
         run: |
           set -euo pipefail
-          find vendor/price -type f -print0 | sort -z | xargs -0 sha256sum > vendor/price/SHA256SUMS.txt
+          # Exclude the manifest itself: hashing a file into which the hashes are
+          # being written yields a self-referential entry that can never verify.
+          # Binary mode (-b) so the manifest is byte-identical whether it is
+          # regenerated here or on a maintainer's machine.
+          find vendor/price -type f ! -name SHA256SUMS.txt -print0 \
+            | sort -z | xargs -0 sha256sum -b > vendor/price/SHA256SUMS.txt
 
       - name: Commit vendored package
         shell: bash

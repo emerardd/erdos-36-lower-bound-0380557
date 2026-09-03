@@ -14,7 +14,7 @@ The release candidate contains a short proof note, a 69-row JSON certificate,
 and a standalone interval checker. The optimizer is not in the trusted path.
 A fresh run gives
 
-    D <= 2.6277191078658615742268756
+    D <= 2.6277192
       < 1/0.380557 = 2.6277272524221075949...
 
 Would you be willing to sanity-check the analytic reduction and, if convenient,

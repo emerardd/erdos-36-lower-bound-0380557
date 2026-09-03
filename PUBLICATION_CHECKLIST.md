@@ -25,10 +25,17 @@ Do these in order. Do not skip directly to an arXiv announcement.
 6. **DONE:** repository created as `emerardd/erdos-36-lower-bound-0380557`. It may remain private during pre-publication review; switch it to public before broad announcement and DOI archiving.
 7. Copy the contents of this release package into the repository.
 8. **DONE:** author information and canonical repository URL are filled in at root `CITATION.cff`.
-9. Add an open-source license for the code (MIT is a simple choice) and state the
-   paper/certificate license separately if desired (for example CC BY 4.0).
-10. Compile `paper.tex` locally, run both verifiers, regenerate `SHA256SUMS.txt`,
-    commit, and tag the exact verified commit `v1.0.0`.
+9. **DONE:** MIT license added, with a scope note excluding `vendor/`.  The
+    vendored upstream package is redistributed unmodified, with attribution, and
+    no rights over it are claimed; see `LICENSE` and `vendor/price/README.md`.
+    Upstream carried no license file at the time of vendoring.  Ask the upstream
+    author to add one when convenient, and honour any preference they express
+    about the redistribution.  State the paper/certificate license separately if
+    desired (for example CC BY 4.0).
+10. Compile `paper.tex` locally to produce `paper.pdf`, run both verifiers,
+    regenerate the root manifest with `bash code/make_sha256sums.sh`, repack
+    `arxiv-source.zip` from the final `paper.tex`, commit, and tag the exact
+    verified commit `v1.0.0`.
 11. Create a GitHub Release from `v1.0.0`. Do not alter the certificate after
     tagging; if anything changes, make `v1.0.1` or `v1.1.0`.
 

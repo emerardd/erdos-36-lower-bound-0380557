@@ -5,6 +5,13 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/check-vendored-price-reports.yml'
+      - 'code/check_vendored_price_reports.py'
+      - 'vendor/**'
+  pull_request:
+    paths:
+      - '.github/workflows/check-vendored-price-reports.yml'
+      - 'code/check_vendored_price_reports.py'
+      - 'vendor/**'
   workflow_dispatch:
 
 permissions:
@@ -20,12 +27,34 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Verify hash manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This repository's own files.  If this fails after an intentional
+          # edit, regenerate with: bash code/make_sha256sums.sh
+          sha256sum -c SHA256SUMS.txt
+          # The redistributed upstream package.
+          sha256sum -c vendor/price/SHA256SUMS.txt
+          # Price's own manifest was generated with CRLF line endings; strip
+          # them so GNU coreutils can parse the file names.
+          (cd vendor/price/certificate && sed 's/\r$//' SHA256SUMS.txt | sha256sum -c)
       - name: Check all 170 noncentral Arb report balls
         shell: bash
         run: |
           set -euo pipefail
           python code/check_vendored_price_reports.py | tee verification/VENDORED_PRICE_REPORT_CHECK_0380557.txt
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vendored-price-report-check-${{ github.run_id }}
+          path: verification/VENDORED_PRICE_REPORT_CHECK_0380557.txt
+          retention-days: 90
       - name: Commit report
+        # Pull requests must not push to main, and a fork's GITHUB_TOKEN is
+        # read-only in any case.  PR runs verify and publish the artifact only.
+        if: success() && github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail

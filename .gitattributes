@@ -1,0 +1,4 @@
+# Byte-exact provenance: this repository publishes SHA-256 manifests for its
+# own files and for the vendored upstream package.  Any end-of-line conversion
+# would break those hashes on checkout, so disable it for every path.
+* -text

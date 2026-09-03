@@ -1,0 +1,16 @@
+# Verifier checkpoint written by code/verify_center_chunked.py
+code/iv_state_*.json
+
+# Local build products
+*.o
+*.exe
+verify_center_mpfr
+paper.aux
+paper.log
+paper.out
+paper.synctex.gz
+
+# Local environments
+.venv/
+__pycache__/
+*.pyc

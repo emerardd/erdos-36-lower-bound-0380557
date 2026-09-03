@@ -23,7 +23,7 @@
 \title{A Sharper Certified Lower Bound for Erd\H{o}s' Minimum-Overlap Problem}
 \author{Deng Haowen}
 \email{denghaowen59@gmail.com}
-\date{Draft, 23 August 2026}
+\date{23 August 2026}
 
 \begin{document}
 \begin{abstract}
@@ -41,7 +41,7 @@ Its multipliers are treated as exact decimal rationals, and a standalone
 interval-arithmetic checker proves
 \[
  \int_{-2}^{2}q_+(t)\,dt
- \le 2.6277191078658615742268756
+ \le 2.6277192
  < \frac1{0.380557}.
 \]
 All noncentral bins in Price's published Arb verification have a larger margin;
@@ -348,10 +348,16 @@ TARGET 2.6277272524221075949200776756175815975...
 MARGIN 0.0000081445562460206932020756175815975...
 CERTIFIED True
 \end{verbatim}
-Thus
+The transcript above is a verbatim record of one run.  Only the inequality is
+asserted, not the individual digits of \texttt{Dupper}: the initial subdivision
+is proposed by a floating-point root search, so its cell boundaries, and hence
+the trailing digits of the accumulated bound, depend on the version of SciPy
+in use.  Runs on other library versions reproduce the cell counts and the
+certified inequality while differing in the last few digits.  Accordingly we
+record the conclusion in the rounded form
 \begin{equation}\label{eq:center-D}
  \int_{-2}^{2}q_+(t)\dd t
- \le2.6277191078658615742268756
+ \le2.6277192
  <\frac1{0.380557}.
 \end{equation}
 By Lemma~\ref{lem:dual}, every admissible overlap density whose mean belongs to
@@ -414,7 +420,11 @@ cosine, in \texttt{mpmath.iv};
 \end{itemize}
 Ordinary floating-point root finding and the LP solver are explicitly outside
 the trusted path.  The repository records SHA-256 hashes for the certificate,
-checker, paper source and verification transcript.
+checkers, paper source and verification transcripts in its root
+\texttt{SHA256SUMS.txt}, and a second manifest under \texttt{vendor/price/}
+covers the redistributed upstream package.  Both are checked in continuous
+integration, and the repository disables end-of-line translation so that a
+clone reproduces the hashed bytes on every platform.
 
 As a second software implementation, the release also contains
 \texttt{code/verify\_center\_mpfr.c}.  This checker calls MPFR directly with
@@ -437,8 +447,7 @@ remains desirable before using that stronger description.
 Computational exploration, certificate search, and parts of the initial
 exposition were carried out with substantial assistance from OpenAI's ChatGPT.
 The language model is not part of the trusted proof path.  The human author is
-responsible for the claims and should review the final manuscript and code before
-submission.
+responsible for all claims made here.
 
 \begin{thebibliography}{9}
 
