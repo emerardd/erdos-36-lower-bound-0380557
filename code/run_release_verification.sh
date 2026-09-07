@@ -14,10 +14,10 @@ python code/check_noncentral_target.py \
   vendor/price/certificate/erdos_0380554700_theorem_target_per_bin.csv \
   --target 0.38056070
 
-echo '== independent mpmath.iv center verification =='
-python code/run_weighted_mpmath_verification.py --jobs "$JOBS"
-
 echo '== direct MPFR/C center verification =='
 python code/run_weighted_mpfr_verification.py --jobs "$JOBS" --prec 192 --max-depth 20
+
+echo '== mpmath.iv diagnostic reproduction =='
+python code/run_weighted_mpmath_verification.py --jobs "$JOBS"
 
 echo 'GLOBAL CERTIFIED c_E > 0.38056070'
