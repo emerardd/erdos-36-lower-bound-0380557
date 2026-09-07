@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Compile and rerun the independent direct-MPFR weighted-center verifier.
+"""Compile and rerun the direct-MPFR weighted-center verifier.
 
-The frozen subdivision is read only for exact [lo,hi] endpoints; archived
-upper bounds are ignored.  Each subprocess recomputes its own rigorous
-Dhalf_upper from the frozen coefficient transcription. Printed upward-rounded
-decimals are parsed as exact Fractions and aggregated without floating-point arithmetic.
+The frozen JSON certificate is the sole coefficient source of truth.  A compact
+coefficient stream is generated exactly with Fraction arithmetic into a
+temporary file for the C verifier.  Archived numerical upper bounds are ignored.
+Each subprocess recomputes its rigorous Dhalf_upper from scratch; printed
+upward-rounded decimals are parsed as exact Fractions and aggregated exactly.
 """
 from __future__ import annotations
 import argparse,csv,os,re,subprocess,tempfile
@@ -14,7 +15,7 @@ from fractions import Fraction
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
 SRC=ROOT/'code'/'verify_weighted_center_mpfr.c'
-COEFF=ROOT/'certificate'/'weighted_center_coefficients_038056070.txt'
+GEN=ROOT/'code'/'generate_weighted_mpfr_coefficients.py'
 MAN=ROOT/'verification'/'weighted_038056070_mpmath_manifest.csv'
 TARGET=Fraction('0.38056070')
 DRE=re.compile(r'^Dhalf_upper:\s*([0-9]+(?:\.[0-9]+)?)\s*$',re.M)
@@ -29,8 +30,11 @@ def compile(exe,prec):
     p2=subprocess.run([cc,'-O3',f'-DPREC={prec}','-DMPFR_SELFDECL',str(SRC),'-o',str(exe),'-Wl,-l:libmpfr.so.6','-lm'],capture_output=True,text=True)
     if p2.returncode: raise RuntimeError('compile failed\n'+p.stderr+'\n'+p2.stderr)
     return 'MPFR_SELFDECL LP64 fallback'
-def run(exe,lo,hi,maxdepth):
-    p=subprocess.run([str(exe),str(COEFF),str(lo),str(hi),str(maxdepth)],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+def generate_coefficients(path):
+    p=subprocess.run([os.fspath(Path(os.sys.executable)),str(GEN),'--output',str(path)],capture_output=True,text=True)
+    if p.returncode or 'GENERATED True' not in p.stdout: raise RuntimeError('coefficient generation failed\n'+p.stdout+p.stderr)
+def run(exe,coeff,lo,hi,maxdepth):
+    p=subprocess.run([str(exe),str(coeff),str(lo),str(hi),str(maxdepth)],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
     if p.returncode or 'CHUNK_CERTIFIED True' not in p.stdout: raise RuntimeError(p.stdout)
     m=DRE.search(p.stdout)
     if not m: raise RuntimeError('missing Dhalf_upper\n'+p.stdout)
@@ -49,10 +53,12 @@ def main():
         cur=hi
     if cur!=20000:raise ValueError(f'coverage ends {cur}')
     with tempfile.TemporaryDirectory(prefix='erdos36-mpfr6-') as td:
-        exe=Path(td)/'verify';mode=compile(exe,a.prec);print('compile_mode:',mode,flush=True)
+        td=Path(td); exe=td/'verify'; coeff=td/'coefficients.txt'
+        generate_coefficients(coeff); print('coefficient_source: frozen JSON exact generator',flush=True)
+        mode=compile(exe,a.prec);print('compile_mode:',mode,flush=True)
         res=[]
         with ThreadPoolExecutor(max_workers=a.jobs) as ex:
-            fut={ex.submit(run,exe,lo,hi,a.max_depth):(lo,hi,slo,shi) for lo,hi,slo,shi in rows}
+            fut={ex.submit(run,exe,coeff,lo,hi,a.max_depth):(lo,hi,slo,shi) for lo,hi,slo,shi in rows}
             for f in as_completed(fut):
                 lo,hi,slo,shi=fut[f];L,H,D,text=f.result();res.append((L,H,D,text,slo,shi));print(f'PASS [{slo},{shi}] Dhalf<={float(D):.17g}',flush=True)
         res.sort();tot=Fraction(0);cur=0
@@ -61,7 +67,7 @@ def main():
             if lo!=cur:raise AssertionError('post-run coverage failure')
             cur=hi;tot+=D
             if a.save_dir:(a.save_dir/f'chunk_{i:02d}.txt').write_text(text)
-        full=2*tot;td=1/TARGET;margin=td-full
-        print('chunks:',len(res));print('coverage: [0,2] exact and gap-free');print('Dhalf_upper:',dec(tot));print('D_upper:',dec(full));print('target: 0.38056070');print('target_D:',dec(td));print('margin_D:',dec(margin));print('implied_bound_from_D:',dec(1/full));print('CERTIFIED',margin>0)
+        full=2*tot;tdv=1/TARGET;margin=tdv-full
+        print('chunks:',len(res));print('coverage: [0,2] exact and gap-free');print('Dhalf_upper:',dec(tot));print('D_upper:',dec(full));print('target: 0.38056070');print('target_D:',dec(tdv));print('margin_D:',dec(margin));print('implied_bound_from_D:',dec(1/full));print('CERTIFIED',margin>0)
         return 0 if margin>0 else 1
 if __name__=='__main__':raise SystemExit(main())
