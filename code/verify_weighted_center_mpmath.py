@@ -8,9 +8,13 @@ Trusted arithmetic path:
   * exact elementary antiderivative on cells proved positive;
   * conservative width*upper(q) charge on terminal ambiguous cells.
 
-SciPy/NumPy are used only to propose floating root seeds.  The seeds are not
+SciPy/NumPy are used only to propose floating root seeds. The seeds are not
 trusted: every seeded or unseeded cell is certified by interval Taylor bounds,
 and a missed root merely causes additional bisection.
+
+The original search window is n=1,...,400. The frozen JSON carries one legacy
+401st zero placeholder; it is accepted only when exactly zero and normalized
+away before either the rigorous or floating evaluator is built.
 """
 from __future__ import annotations
 from fractions import Fraction
@@ -29,6 +33,14 @@ B2=Fraction(2,3)+Fraction(1,204800)
 def F(s): return Fraction(str(s))
 def ivf(q): return mp.iv.mpf(q.numerator)/q.denominator
 
+def canonical_weight_strings(d):
+    ws=list(d['window_weights'])
+    if len(ws)==401:
+        if F(ws[-1])!=0: raise ValueError('legacy 401st window entry must be exactly zero')
+        ws=ws[:-1]
+    if len(ws)!=400: raise ValueError(f'expected 400 effective window weights, got {len(ws)}')
+    return ws
+
 def iv_upper_frac(x, places=30):
     s=mp.iv.nstr(x.b,90).strip('[]').split(',')[0].strip()
     val=Decimal(s); quantum=Decimal(1).scaleb(-places)
@@ -38,21 +50,22 @@ def load_certificate(path):
     d=json.load(open(path,encoding='utf-8'))
     l2=F(d['second_moment_lambda']); lw=F(d['window_lambda'])
     if l2<0 or lw<0: raise ValueError('negative global multiplier')
-    if any(not (0<=F(w)<=1) for w in d['window_weights']): raise ValueError('window weight outside [0,1]')
+    wstrings=canonical_weight_strings(d)
+    if any(not (0<=F(w)<=1) for w in wstrings): raise ValueError('window weight outside [0,1]')
     const=Fraction(1)+l2*B2+lw*Fraction(1,2); b2=-l2
     ordinary=[]
     for a in d['cosine_rows']:
         xi=F(a['xi']); lam=F(a['lambda'])
         if lam<0 or xi<=0: raise ValueError('bad cosine row')
         x=ivf(xi)
-        # Choose an exact decimal B strictly above the interval upper endpoint.
         B=iv_upper_frac((mp.iv.sin(x)/x)**2,30)+Fraction(1,10**29)
         const += lam*B
         ordinary.append((xi,-lam))
     hmap={int(a['n']):F(a['lambda']) for a in d['harmonic_rows']}
     if any(v<0 for v in hmap.values()): raise ValueError('negative harmonic multiplier')
+    if hmap and max(hmap)>400: raise ValueError('harmonic row outside n=1,...,400')
     picos=[]
-    for n,ws in enumerate(d['window_weights'],1):
+    for n,ws in enumerate(wstrings,1):
         c=lw*F(ws)-hmap.get(n,Fraction(0))
         if c: picos.append((n,c))
     return d,const,b2,ordinary,picos
@@ -94,7 +107,7 @@ def make_evaluator(const,b2,ordinary,picos,order):
 def floating_roots(d):
     l2=float(d['second_moment_lambda']); lw=float(d['window_lambda'])
     xis=np.array([float(a['xi']) for a in d['cosine_rows']]); lams=np.array([float(a['lambda']) for a in d['cosine_rows']]); sx=np.sinc(xis/np.pi)**2
-    weights=np.array([float(x) for x in d['window_weights']]); ns=np.arange(1,len(weights)+1.)
+    weights=np.array([float(x) for x in canonical_weight_strings(d)]); ns=np.arange(1,len(weights)+1.)
     hs=np.array([int(a['n']) for a in d['harmonic_rows']],dtype=float); hl=np.array([float(a['lambda']) for a in d['harmonic_rows']])
     def qf(t):
         v=1+l2*(float(B2)-t*t)+np.dot(lams,sx-np.cos(xis*t))+lw*(0.5+np.dot(weights,np.cos(np.pi*ns*t)))
