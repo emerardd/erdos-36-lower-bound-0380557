@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Generate the direct-MPFR coefficient stream exactly from the frozen JSON.
 
-The frozen JSON is the sole coefficient source of truth.  All decimal literals
-are parsed exactly with Decimal -> Fraction.  Products and differences are done
+The frozen JSON is the sole coefficient source of truth. All decimal literals
+are parsed exactly with Decimal -> Fraction. Products and differences are done
 with Fraction, then rendered back as terminating decimal strings without a
 finite-precision Decimal context.
+
+The original search uses the 400 harmonics n=1,...,400. The frozen JSON carries
+one legacy trailing zero placeholder in window_weights. We accept that only
+when it is exactly zero and normalize it away; a nonzero 401st entry is rejected.
 """
 from __future__ import annotations
 
@@ -20,6 +24,17 @@ CERT = ROOT / "certificate" / "weighted_center_certificate_038056070.json"
 
 def rat(s: str) -> Fraction:
     return Fraction(Decimal(s))
+
+
+def canonical_weights(d: dict) -> list[Fraction]:
+    weights = [rat(x) for x in d["window_weights"]]
+    if len(weights) == 401:
+        if weights[-1] != 0:
+            raise ValueError("legacy 401st window entry must be exactly zero")
+        weights = weights[:-1]
+    if len(weights) != 400:
+        raise ValueError(f"expected 400 effective window weights, got {len(weights)}")
+    return weights
 
 
 def terminating_decimal(q: Fraction) -> str:
@@ -52,18 +67,18 @@ def terminating_decimal(q: Fraction) -> str:
 def build_lines() -> list[str]:
     d = json.loads(CERT.read_text(encoding="utf-8"))
     cos = d["cosine_rows"]
-    weights = [rat(x) for x in d["window_weights"]]
+    weights = canonical_weights(d)
     harmonics = {int(r["n"]): rat(r["lambda"]) for r in d["harmonic_rows"]}
     if len(cos) != 80:
         raise ValueError(f"expected 80 cosine rows, got {len(cos)}")
-    if len(weights) != 400:
-        raise ValueError(f"expected 400 window weights, got {len(weights)}")
     if any(w < 0 or w > 1 for w in weights):
         raise ValueError("window weight outside [0,1]")
     if rat(d["second_moment_lambda"]) < 0 or rat(d["window_lambda"]) < 0:
         raise ValueError("negative global multiplier")
     if any(rat(r["lambda"]) < 0 for r in cos) or any(v < 0 for v in harmonics.values()):
         raise ValueError("negative dual multiplier")
+    if harmonics and max(harmonics) > 400:
+        raise ValueError("harmonic row outside n=1,...,400")
 
     wl = rat(d["window_lambda"])
     out = [
@@ -89,6 +104,8 @@ def main() -> int:
     else:
         print(text, end="")
     print("SOURCE frozen JSON")
+    print("WINDOW_HARMONICS 400")
+    print("TRAILING_ZERO_PLACEHOLDER normalized")
     print("COEFFICIENTS exact Fraction arithmetic")
     print("GENERATED True")
     return 0
