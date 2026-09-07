@@ -1,0 +1,42 @@
+name: Housekeeping copy verified PDF
+
+on:
+  push:
+    branches:
+      - 'housekeeping/current-vs-legacy'
+    paths:
+      - '.github/workflows/housekeeping-copy-pdf.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  copy-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: housekeeping/current-vs-legacy
+      - name: Download exact successful main CI artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/release-artifact
+          mkdir -p /tmp/release-artifact
+          gh run download 34121043212 \
+            --repo "$GITHUB_REPOSITORY" \
+            --name weighted-038056070-release-34121043212 \
+            --dir /tmp/release-artifact
+          test -s /tmp/release-artifact/paper.pdf
+          echo 'd81c9c93d3948057acf918cc2b639d9adf0f9f73113d403f2f4c486191162ba3  /tmp/release-artifact/paper.pdf' | sha256sum -c -
+          cp /tmp/release-artifact/paper.pdf paper.pdf
+      - name: Commit exact PDF bytes
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add paper.pdf
+          git commit -m 'Track CI-built paper PDF'
+          git push origin HEAD:housekeeping/current-vs-legacy
