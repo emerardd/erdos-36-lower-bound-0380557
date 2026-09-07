@@ -1,43 +1,24 @@
 {
   "title": "A Sharper Certified Lower Bound for Erdos' Minimum-Overlap Problem",
   "upload_type": "software",
-  "description": "<p>Proof note, dual certificate and two independent interval-arithmetic verifiers for the computer-assisted lower bound <code>c_E &gt; 0.380557</code> for Erd&#337;s' minimum-overlap constant, improving the previously certified <code>c_E &gt; 0.38055470</code>.</p><p>The Parseval energy inequality used here is not new; it is already present in White's Fourier-analytic approach. The contribution is the hybrid certificate: White's global Parseval energy row is inserted into Price's mean-conditioned dual-certificate framework, which allows the two binding central mean bins (85 and 86) to be improved. All other bins are Price's, reused unchanged.</p><p>The center certificate is checked by two independent software implementations: a 45-digit <code>mpmath.iv</code> checker and a standalone MPFR/C checker that shares no interval library, uses no root finder, and is bit-deterministic. This is <strong>not</strong> an external third-party audit; independent reproduction by another researcher is invited and had not yet occurred at the time of this deposit. The optimizer that discovered the certificate is not part of the trusted proof path.</p><p><strong>Licensing scope.</strong> The MIT license covers only material authored for this repository. The <code>vendor/price/</code> directory is a byte-for-byte redistribution of the certificate directory of Liam Price's public repository <code>Leeham06972452/erdos-36-lower-bound</code> at commit 6bc610e, included for provenance so that the noncentral bins can be re-verified against exactly the bytes that were used. That material is the work of its original author, carried no explicit license file at the time of vendoring, and no rights over it are claimed or granted by this deposit.</p>",
+  "version": "1.1.0",
+  "description": "<p>Proof note, frozen dual certificate, and two interval-arithmetic verification paths for the computer-assisted lower bound <code>c_E &gt; 0.38056070</code> for Erdos' minimum-overlap constant.</p><p>The proof retains Liam Price's certified Arb bounds for 170 noncentral mean bins and replaces the two binding center bins. The new center proof object uses the exact second-moment row, ordinary Fourier rows, exact harmonic rows, and a fixed weighted Parseval row <code>-sum w_n C_(n*pi) &lt;= 1/2</code> with <code>0 &lt;= w_n &lt;= 1</code>. The underlying Parseval energy inequality is not new; the improvement comes from the optimized non-rectangular spectral window inside Price's mean-conditioned certificate framework.</p><p>The frozen center certificate is checked by two separate implementations developed within this project: a standalone direct-MPFR/C verifier with directed rounding and sixth-order Taylor enclosures, and an independent <code>mpmath.iv</code> verifier with a separate implementation and subdivision strategy. This is not an external third-party audit. The LP/frequency search used to discover the certificate is outside the trusted proof path.</p><p><strong>Licensing scope.</strong> The MIT license covers material authored for this repository. The <code>vendor/price/</code> directory is redistributed upstream material retained for provenance and is not relicensed by this deposit.</p>",
   "license": "mit",
   "access_right": "open",
-  "creators": [
-    {
-      "name": "Deng, Haowen"
-    }
-  ],
+  "creators": [{"name": "Deng, Haowen"}],
   "keywords": [
     "Erdos problem 36",
     "minimum overlap problem",
     "computer-assisted proof",
     "interval arithmetic",
     "dual certificate",
-    "Parseval inequality",
+    "weighted Parseval",
     "additive combinatorics"
   ],
   "related_identifiers": [
-    {
-      "identifier": "10.4064/aa220728-7-6",
-      "relation": "references",
-      "scheme": "doi"
-    },
-    {
-      "identifier": "arXiv:2201.05704",
-      "relation": "references",
-      "scheme": "arxiv"
-    },
-    {
-      "identifier": "https://github.com/Leeham06972452/erdos-36-lower-bound",
-      "relation": "isDerivedFrom",
-      "scheme": "url"
-    },
-    {
-      "identifier": "https://github.com/occisn/erdos-36-certified-lower-bound",
-      "relation": "references",
-      "scheme": "url"
-    }
+    {"identifier": "10.4064/aa220728-7-6", "relation": "references", "scheme": "doi"},
+    {"identifier": "arXiv:2201.05704", "relation": "references", "scheme": "arxiv"},
+    {"identifier": "https://github.com/Leeham06972452/erdos-36-lower-bound", "relation": "isDerivedFrom", "scheme": "url"},
+    {"identifier": "https://github.com/occisn/erdos-36-certified-lower-bound", "relation": "references", "scheme": "url"}
   ]
 }
