@@ -6,7 +6,7 @@
 - [x] Verify every spectral weight satisfies `0 <= w_n <= 1` and every dual multiplier is nonnegative.
 - [x] Verify the center certificate with the independent `mpmath.iv` implementation.
 - [x] Verify the center certificate with the direct-MPFR/C implementation.
-- [x] Check that the decimals embedded in the C verifier match the frozen JSON proof object.
+- [x] Verify the terminating-decimal coefficient transcription consumed by the C verifier matches the frozen JSON proof object.
 - [x] Check all 170 vendored noncentral Arb balls against theorem target `0.38056070`.
 - [x] Keep the LP/frequency search outside the trusted proof path.
 - [ ] Obtain an external third-party reproduction before describing the new result as independently audited by another researcher.
@@ -22,7 +22,7 @@
 - [ ] Confirm the PR CI uses the real `<mpfr.h>` path and ends in `CERTIFIED True` for all stages.
 - [x] Rebuild `paper.pdf` reproducibly from the final source locally and in CI; attach it to the release rather than tracking it in git.
 - [x] Repack `arxiv-source.zip` from the final source locally and in CI; attach it to the release rather than tracking it in git.
-- [x] Regenerate `SHA256SUMS.txt` after all content changes.
+- [x] Configure clean-checkout CI to generate the release `SHA256SUMS.txt` after verification and upload it with the release artifacts, avoiding a stale tracked self-manifest.
 
 ## C. Review before merge
 
