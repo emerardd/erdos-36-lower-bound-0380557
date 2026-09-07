@@ -2,7 +2,7 @@
 """Compile and rerun the direct-MPFR combined center verifier.
 
 The standalone combined certificate contains exact finite-decimal T2/WINDOW,
-80 ordinary cosine rows and 400 combined n*pi coefficients.  Its mathematical
+80 ordinary cosine rows and 400 combined n*pi coefficients. Its mathematical
 validity is checked separately by check_weighted_combined_certificate.py.
 Archived integral bounds are ignored: every chunk is recomputed by MPFR and the
 printed upward-rounded bounds are aggregated as exact Fractions.
@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
 SRC=ROOT/'code'/'verify_weighted_center_mpfr.c'
 COEFF=ROOT/'certificate'/'weighted_center_combined_038056070.txt'
-MAN=ROOT/'verification'/'weighted_038056070_mpmath_manifest.csv'
+MAN=ROOT/'verification'/'weighted_038056070_center_manifest.csv'
 TARGET=Fraction('0.38056070')
 DRE=re.compile(r'^Dhalf_upper:\s*([0-9]+(?:\.[0-9]+)?)\s*$',re.M)
 def units(s):
