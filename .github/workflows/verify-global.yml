@@ -1,4 +1,4 @@
-name: Verify global bound c_E > 0.380557
+name: Verify global bound c_E > 0.38056070
 
 on:
   push:
@@ -7,45 +7,37 @@ on:
       - '.github/workflows/verify-global.yml'
       - 'code/**'
       - 'certificate/**'
+      - 'verification/**'
       - 'vendor/**'
       - 'requirements.txt'
       - 'paper.tex'
-      - 'SHA256SUMS.txt'
   pull_request:
     paths:
       - '.github/workflows/verify-global.yml'
       - 'code/**'
       - 'certificate/**'
+      - 'verification/**'
       - 'vendor/**'
       - 'requirements.txt'
       - 'paper.tex'
-      - 'SHA256SUMS.txt'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Verify hash manifests
+      - name: Verify vendored Price manifests
         shell: bash
         run: |
           set -euo pipefail
-          # This repository's own files.  If this fails after an intentional
-          # edit, regenerate with: bash code/make_sha256sums.sh
-          sha256sum -c SHA256SUMS.txt
-          # The redistributed upstream package.
           sha256sum -c vendor/price/SHA256SUMS.txt
-          # Price's own manifest was generated with CRLF line endings; strip
-          # them so GNU coreutils can parse the file names.
           (cd vendor/price/certificate && sed 's/\r$//' SHA256SUMS.txt | sha256sum -c)
 
       - name: Set up Python
@@ -53,127 +45,66 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install Price verifier dependencies
+      - name: Install Python dependencies
         shell: bash
         run: |
-          set -euo pipefail
           python -m pip install --upgrade pip
-          python -m pip install -r vendor/price/certificate/requirements.txt
-
-      - name: Reverify all 170 noncentral Price bins at theorem target
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p verification
-          python vendor/price/certificate/prove_erdos_0380554275_arb.py \
-            vendor/price/certificate/erdos_aug_central_gridF400.json \
-            --target 0.380557 \
-            --only-bins '0-84,87-171' \
-            --csv verification/ci_price_noncentral_0380557.csv \
-            --json-report verification/ci_price_noncentral_0380557.json \
-            2>&1 | tee verification/ci_price_noncentral_0380557.log
-
-      - name: Install new-center verifier dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
           python -m pip install -r requirements.txt
 
-      - name: Reverify new center with mpmath interval checker
+      - name: Install MPFR/GMP headers
         shell: bash
         run: |
-          set -euo pipefail
-          python code/run_center_verification.py 2>&1 | tee verification/ci_center_mpmath.txt
-          grep -q 'CERTIFIED True' verification/ci_center_mpmath.txt
-
-      - name: Install MPFR development library
-        shell: bash
-        run: |
-          set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y libmpfr-dev libgmp-dev
 
-      - name: Reverify new center with independent MPFR/C checker
+      - name: Run complete frozen verification
         shell: bash
+        env:
+          JOBS: '2'
         run: |
           set -euo pipefail
-          python code/check_mpfr_certificate_match.py | tee verification/ci_mpfr_certificate_match.txt
-          grep -q 'MATCH True' verification/ci_mpfr_certificate_match.txt
-          bash code/run_mpfr_verification.sh 2>&1 | tee verification/ci_center_mpfr.txt
-          test "$(grep -c 'CERTIFIED True' verification/ci_center_mpfr.txt)" -ge 2
-          # The supported build path includes <mpfr.h>.  If the wrapper had to
-          # fall back to the self-declared ABI, the run is not authoritative.
-          if grep -q 'falling back to self-declared MPFR ABI' verification/ci_center_mpfr.txt; then
-            echo 'MPFR header was not used; refusing to certify from the fallback path.' >&2
+          bash code/run_release_verification.sh 2>&1 | tee verification/ci_release_verification.txt
+          grep -q 'GLOBAL CERTIFIED c_E > 0.38056070' verification/ci_release_verification.txt
+          grep -q 'compile_mode: system mpfr.h' verification/ci_release_verification.txt
+          if grep -q 'MPFR_SELFDECL LP64 fallback' verification/ci_release_verification.txt; then
+            echo 'release verification used unsupported MPFR fallback' >&2
             exit 1
           fi
 
-      - name: Check coverage and write global summary
+      - name: Build release paper and arXiv package
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import json
-          from pathlib import Path
+          sudo apt-get install -y texlive-latex-base texlive-latex-recommended texlive-fonts-recommended lmodern
+          bash code/build_paper.sh
+          rm -f arxiv-source.zip
+          zip -X -9 arxiv-source.zip paper.tex
+          test -s paper.pdf
+          test -s arxiv-source.zip
+          unzip -p arxiv-source.zip paper.tex | cmp - paper.tex
 
-          p = json.loads(Path('verification/ci_price_noncentral_0380557.json').read_text())
-          expected = list(range(0,85)) + list(range(87,172))
-          checked = [int(x) for x in p['checked_bins']]
-          assert checked == expected, (checked[:5], checked[-5:], len(checked))
-          assert p['proved_all_checked_bins'] is True
-          assert str(p['target']) == '0.380557'
+      - name: Generate release SHA256 manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash code/make_sha256sums.sh
+          test -s SHA256SUMS.txt
 
-          center1 = Path('verification/ci_center_mpmath.txt').read_text()
-          center2 = Path('verification/ci_center_mpfr.txt').read_text()
-          assert 'CERTIFIED True' in center1
-          assert center2.count('CERTIFIED True') >= 2
+      - name: Upload release artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weighted-038056070-release-${{ github.run_id }}
+          path: |
+            paper.pdf
+            arxiv-source.zip
+            SHA256SUMS.txt
+          retention-days: 90
 
-          upstream = Path('vendor/price/UPSTREAM_COMMIT.txt').read_text().strip()
-          summary = f'''GLOBAL CERTIFIED c_E > 0.380557\n\nPrice-derived noncentral bins: 170 / 170 PASS\nNew central bins (85,86), mpmath.iv verifier: PASS\nNew central bins (85,86), independent MPFR/C verifier: PASS\nMean-bin coverage: 172 / 172\nPrice upstream commit: {upstream}\n\nAll three verifier stages exited successfully at theorem target 0.380557.\n'''
-          Path('verification/GLOBAL_CERTIFICATION_0380557.txt').write_text(summary)
-          print(summary)
-          PY
-
-      - name: Upload verification reports
+      - name: Upload verification transcript
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: verification-reports-${{ github.run_id }}
-          path: verification/
+          name: weighted-038056070-verification-${{ github.run_id }}
+          path: verification/ci_release_verification.txt
           retention-days: 90
-
-      - name: Commit verification reports
-        # Pull requests must not push to main, and a fork's GITHUB_TOKEN is
-        # read-only in any case.  PR runs verify and publish the artifact only.
-        if: success() && github.event_name != 'pull_request'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add verification/ci_price_noncentral_0380557.csv \
-                  verification/ci_price_noncentral_0380557.json \
-                  verification/ci_price_noncentral_0380557.log \
-                  verification/ci_center_mpmath.txt \
-                  verification/ci_mpfr_certificate_match.txt \
-                  verification/ci_center_mpfr.txt \
-                  verification/GLOBAL_CERTIFICATION_0380557.txt
-          if git diff --cached --quiet; then
-            echo 'No verification report changes.'
-            exit 0
-          fi
-          git commit -m 'Record full 172-bin theorem-target verification'
-
-          # Another workflow may have advanced main while this job was running.
-          # Rebase the generated report commit onto the latest main before pushing.
-          for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-            echo "Push race on attempt ${attempt}; retrying..."
-            sleep 2
-          done
-          echo 'Could not push verification reports after three retries.' >&2
-          exit 1

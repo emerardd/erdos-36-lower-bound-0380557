@@ -1,152 +1,152 @@
-# Erdős #36: certified lower-bound package for `c_E > 0.380557`
+# Erdős #36: certified lower-bound package for `c_E > 0.38056070`
 
-This repository package contains a proof note and a machine-checkable center-bin
-certificate for the lower bound
+This repository contains a computer-assisted proof package for
 
 ```text
-c_E > 0.380557
+c_E > 0.38056070
 ```
 
 for Erdős' minimum-overlap problem.
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22279894.svg)](https://doi.org/10.5281/zenodo.22279894)
 
-## Status
+## Result
 
-The center certificate has now been verified by **two separate interval-arithmetic implementations**.
-The original 45-decimal-digit `mpmath.iv` checker returns, on the pinned
-dependency versions in `requirements.txt`:
+The proof keeps Liam Price's Arb-certified bounds for 170 noncentral mean bins
+and replaces the two binding center bins with a stronger frozen dual certificate.
+The center proof object is stored in combined spectral form.  It contains
+
+- the exact second-moment multiplier;
+- 80 nonnegative ordinary cosine multipliers;
+- one positive weighted-Parseval budget `lambda_W`;
+- 400 exact combined harmonic coefficients `c_n`, each satisfying
+  `c_n <= lambda_W`.
+
+The last condition is enough to recover a valid weighted-Parseval/harmonic-row
+decomposition.  For `c_n >= 0`, take `w_n = c_n/lambda_W` and harmonic
+multiplier `eta_n = 0`; for `c_n < 0`, take `w_n = 0` and
+`eta_n = -c_n`.  Hence `0 <= w_n <= 1`, `eta_n >= 0`, and
+`c_n = lambda_W*w_n - eta_n` exactly.  This is checked with exact rational
+arithmetic before interval verification.
+
+The weighted Parseval row itself is the consequence
+`-sum w_n C_{n*pi} <= 1/2` of White's Parseval energy bound.  The improvement
+comes from using a frozen non-rectangular spectral combination inside Price's
+mean-conditioned certificate framework.
+
+## Certified center verification
+
+`code/check_weighted_combined_certificate.py` validates the standalone
+finite-decimal proof object
+`certificate/weighted_center_combined_038056070.txt`, including all multiplier
+sign conditions, the exact PI index set `1..400`, and `c_n <= lambda_W` for every
+combined coefficient.
+
+`code/verify_weighted_center_mpfr.c` then uses MPFR directed rounding,
+sixth-order Taylor sign enclosures with a seventh-derivative remainder, and an
+explicit antiderivative on cells proved positive.  Archived integral values are
+not trusted inputs: `code/run_weighted_mpfr_verification.py` recomputes all 32
+center subintervals and aggregates the printed upward-rounded bounds as exact
+rationals.
+
+The clean-checkout release verification gives
 
 ```text
-FINAL Dupper 2.6277191078658615742268756
-TARGET 2.6277272524221075949200776756175815975...
-MARGIN 0.0000081445562460206932020756175815975...
+D_upper: 2.627701565496540078311925225882434229578618824422997827900570...
+target_D: 2.627701704353602460790092093061632480705443310357585531033551...
+margin_D: 0.000000138857062382478166867179198251126824485934587703132981...
 CERTIFIED True
 ```
 
-The asserted bound is `<= 2.6277192`; see "Note on digits" below before
-comparing the tail against your own run.
+Thus the center certificate proves `c_E > 0.38056070` with a positive rigorous
+margin.  Earlier JSON-decomposition and `mpmath.iv` experiments were useful
+during development but are not part of the release proof path.
 
-A second checker, `code/verify_center_mpfr.c`, calls MPFR 4.x directly with
-explicit downward/upward rounding.  It uses no `mpmath`, Arb, SciPy, or root
-finder and returns, at both 256-bit and 384-bit precision:
+## Noncentral bins
+
+The other 170 bins reuse Price's published Arb-certified balls. The largest
+noncentral `D` upper bound is approximately
 
 ```text
-D_upper 2.627722684051132572474851527168563565889667723367257198
-target_D_lower 2.627727252422107594920077675617581597500505837496091255
-margin_lower 0.000004568370975022445226148449018031610838114128834058127384
-CERTIFIED True
+2.6275385308733757900902721758784
 ```
 
-The MPFR bound is intentionally more conservative than the first verifier, but
-still proves the theorem target.  The global proof reuses Liam Price's already
-published Arb-certified bounds for all mean bins except the two central bins 85
-and 86.  Those two bins are replaced by the certificate here.  External
-third-party reproduction is still invited; the second implementation is an
-independent code path written for this work, not a third-party audit.
+corresponding to a reciprocal about `0.3805843333`, so the new global bottleneck
+remains the two center bins. `code/check_noncentral_target.py` checks all 170
+vendored Arb balls against `0.38056070`.
 
-## What is new, and what is not
+## Frozen proof object
 
-The Parseval energy inequality used here is **not new**; it is already present in
-White's Fourier-analytic approach.  The contribution is the hybrid certificate:
-White's global Parseval energy row is inserted into Price's mean-conditioned
-dual-certificate framework, allowing the two binding center bins to be improved.
+- `certificate/weighted_center_combined_038056070.txt` - the authoritative
+  finite-decimal center certificate: `T2`, `WINDOW`, 80 `COS` rows, and 400
+  combined `PI` coefficients.
+- `verification/weighted_038056070_center_manifest.csv` - the exact 32-piece
+  partition of `[0,2]` used only to schedule rigorous MPFR subproblems.
+- `code/check_weighted_combined_certificate.py` - exact-rational certificate
+  validity check.
+- `code/verify_weighted_center_mpfr.c` and
+  `code/run_weighted_mpfr_verification.py` - the rigorous center verifier and
+  exact aggregator.
 
-## Files
+The LP/search code under `experiments/` and historical development certificates
+are exploratory and are not part of the trusted proof path.
 
-- `paper.tex` / `paper.pdf` - complete proof note.  Rebuild the PDF with
-  `bash code/build_paper.sh`, which pins `SOURCE_DATE_EPOCH` so the output is
-  byte-identical to the hash in `SHA256SUMS.txt`.  A plain `pdflatex paper.tex`
-  produces the same document but a different file, because pdfTeX stamps the
-  build time into it.
-- `certificate/center_certificate.json` - 69 nonzero exact-decimal dual multipliers.
-- `code/verify_center_chunked.py` - interval verifier, checkpointed in short chunks.
-- `code/run_center_verification.py` - one-command wrapper for the Python verifier.
-- `code/verify_center_mpfr.c` - independent MPFR/C verifier.
-- `code/run_mpfr_verification.sh` - compile-and-run wrapper for the MPFR verifier.
-- `code/check_mpfr_certificate_match.py` - checks the constants embedded in the
-  C verifier against the JSON certificate, string for string.
-- `code/check_vendored_price_reports.py` - checks the archived upstream Arb
-  balls against the stronger target.
-- `code/make_sha256sums.sh` - regenerates the root `SHA256SUMS.txt`.
-- `code/build_paper.sh` - reproducible build of `paper.pdf`.
-- `verification/center_result.txt` - fresh 45-digit verification transcript.
-- `verification/REPRODUCIBILITY_NOTES.md` - **what is reproducible and to how
-  many digits.  Read this before reporting a mismatch.**
-- `verification/PRICE_DEPENDENCY.md` - exact statement of what is reused from Price.
-- `verification/MPFR_INDEPENDENT_VERIFICATION.md` - the second implementation.
-- `PUBLICATION_CHECKLIST.md` - staged release instructions.
-- `CITATION.cff` - citation metadata for this repository.
-- `LICENSE` - MIT license for this repository's own code; see the scope note in
-  that file, which excludes `vendor/`.
-- `SHA256SUMS.txt` - hashes for this repository's own files.
-- `vendor/price/` - redistributed upstream package; see below.
+## Reproduce the center certificate
 
-## Licensing and attribution
-
-The MIT license covers only material authored for this repository: `paper.tex`,
-`certificate/`, `code/`, `templates/`, and this repository's own verification
-transcripts.
-
-`vendor/price/` is a byte-for-byte redistribution of the `certificate/`
-directory of Liam Price's public repository
-`Leeham06972452/erdos-36-lower-bound`, pinned at the commit in
-`vendor/price/UPSTREAM_COMMIT.txt`.  It is included so that the noncentral bins
-of the theorem can be re-verified against exactly the bytes that were used.
-That material is the work of its original author and is **not** covered by the
-MIT license here; at the time of vendoring the upstream repository carried no
-explicit license file, and no rights over it are claimed or granted by this
-repository.  See `vendor/price/README.md` and the scope note in `LICENSE`.
-
-## Note on digits
-
-Only the inequalities are claimed, not the trailing digits of the Python
-checker's printed bound.  The initial subdivision is proposed by a
-floating-point root search that lies outside the trusted path, so the last few
-digits move with the SciPy version while the cell counts and the certified
-inequality do not.  The MPFR checker has no such seeding and is deterministic.
-`verification/REPRODUCIBILITY_NOTES.md` gives the details and a measured
-side-by-side comparison.
-
-## Reproduce the new center certificate
-
-Python 3.10+ is recommended.
+Python 3.10+ and a C compiler are required.  Install MPFR/GMP development
+headers (`libmpfr-dev libgmp-dev` on Debian/Ubuntu, `brew install mpfr` on
+macOS), then run
 
 ```bash
-python -m venv .venv
-# Linux/macOS:
-source .venv/bin/activate
-# Windows PowerShell:
-# .venv\Scripts\Activate.ps1
-
-pip install -r requirements.txt
-python code/run_center_verification.py
+python code/check_weighted_combined_certificate.py
+python code/run_weighted_mpfr_verification.py --jobs 8
 ```
 
-The LP optimizer is not needed.  The checker reconstructs every right-hand side
-used by the new center certificate and treats the JSON multipliers as exact
-decimal rationals.
+The supported release/CI path compiles against the real `<mpfr.h>`.  A guarded
+`MPFR_SELFDECL` fallback exists only for LP64 Linux development environments
+that have the runtime library but not the header; CI rejects that fallback as an
+authoritative release check.
 
-## Reproduce the independent MPFR check
-
-A C compiler and MPFR with its development header are needed; on Debian or
-Ubuntu that is `libmpfr-dev libgmp-dev`, on macOS `brew install mpfr`.  The
-release was tested with MPFR 4.2.2.
+To check the noncentral splice:
 
 ```bash
-bash code/run_mpfr_verification.sh
+python code/check_noncentral_target.py \
+  vendor/price/certificate/erdos_0380554700_theorem_target_per_bin.csv \
+  --target 0.38056070
 ```
 
-The script performs both a 256-bit and a 384-bit run and requires each to end in
-`CERTIFIED True`.  The source intentionally avoids a root finder and does not
-share an interval library with the Python checker.
+Or run the complete release verification after dependencies are installed:
 
-The verifier includes the real `<mpfr.h>`, so the compiler type-checks every
-call against the MPFR you actually have.  For machines without the header the
-source also carries hand-written declarations behind `-DMPFR_SELFDECL`, which
-the wrapper falls back to automatically; that path hard-codes the `mpfr_t`
-layout for the LP64 Linux ABI, announces itself loudly, and is rejected by CI.
-Treat it as a convenience, not as a verification path.
+```bash
+bash code/run_release_verification.sh
+```
+
+## Paper and reproducible release
+
+- `paper.tex` - proof note source. CI builds `paper.pdf` reproducibly; the PDF is attached to releases rather than kept as a tracked source artifact.
+- `code/build_paper.sh` - reproducible pdfTeX build with a pinned
+  `SOURCE_DATE_EPOCH`.
+- `arxiv-source.zip` - generated by CI/release from the final `paper.tex` and attached as an artifact; the ZIP is not tracked in git.
+- the CI release job generates a SHA-256 manifest for the exact clean-checkout
+  release artifacts after all proof checks pass.
+- `vendor/price/` - pinned upstream Price package with its own provenance and
+  manifests.
+
+The repository's MIT license does not relicense `vendor/price/`; see `LICENSE`
+and `vendor/price/README.md`.
+
+## Trust model
+
+The trusted path consists of the standalone combined center certificate, its
+exact-rational validity checker, the direct-MPFR interval verifier with exact
+chunk aggregation, and the vendored noncentral Arb reports.  The LP optimizer,
+exploratory frequency search, ordinary floating-point continuous integration,
+and historical Python interval experiments are not needed to verify the
+theorem.
+
+The center verifier was developed within this project; it is not a third-party
+audit.  External reproduction by another researcher remains desirable and
+should be described separately if obtained.
 
 ## References
 
@@ -157,20 +157,17 @@ Treat it as a convenience, not as a verification path.
 - Independent audit of Price's certificate:
   https://github.com/occisn/erdos-36-certified-lower-bound
 
+## Archive
 
-## Repository
+Canonical repository:
+https://github.com/emerardd/erdos-36-lower-bound-0380557
 
-Canonical repository: https://github.com/emerardd/erdos-36-lower-bound-0380557
-
-Archived on Zenodo. Cite the concept DOI, which always resolves to the
-latest version:
+Zenodo concept DOI (always resolves to the latest archived version):
 
 ```text
 10.5281/zenodo.22279894
 ```
 
-The DOI for this specific release is 10.5281/zenodo.22279895.
-
-The verification package is frozen at the tagged release; external reproduction
-is invited. If you reproduce, or fail to reproduce, any part of it, please open
-an issue with your software stack, commit hash, and exact output.
+A version-specific DOI for this `0.38056070` release should be inserted only
+after Zenodo creates the new release record; it is intentionally not prefilled
+here.
