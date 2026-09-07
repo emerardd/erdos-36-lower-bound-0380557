@@ -181,7 +181,7 @@ certificate.
 Suppose $p$ satisfies finitely many valid inequalities
 $\int p\phi_j\le B_j$.  For $\lambda_j\ge0$ put
 \[
- q(t)=1+\sumjj\lambda_j(B_j-\phi_j(t)),
+ q(t)=1+\sum_j\lambda_j(B_j-\phi_j(t)),
  \qquad q_+(t)=\max(q(t),0).
 \]
 Then
@@ -234,7 +234,7 @@ the coefficients is not needed for this check.
 
 \section{Certified direct-MPFR verification}
 \texttt{code/verify\_weighted\_center\_mpfr.c} uses MPFR with explicit directed
-rounding.  At a cell center it encloses $q,q',\ldots,)^{(6)}$ and uses a global
+rounding.  At a cell center it encloses $q,q',\ldots,q^{(6)}$ and uses a global
 seventh-derivative bound for the Taylor remainder.  Cells proved positive are
 integrated with the explicit elementary antiderivative of $q$; terminal
 ambiguous cells are charged conservatively by their width times a rigorous upper
