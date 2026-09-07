@@ -2,10 +2,14 @@
   "title": "A Sharper Certified Lower Bound for Erdos' Minimum-Overlap Problem",
   "upload_type": "software",
   "version": "1.1.0",
-  "description": "<p>Proof note, frozen dual certificate, and two interval-arithmetic verification paths for the computer-assisted lower bound <code>c_E &gt; 0.38056070</code> for Erdos' minimum-overlap constant.</p><p>The proof retains Liam Price's certified Arb bounds for 170 noncentral mean bins and replaces the two binding center bins. The new center proof object uses the exact second-moment row, ordinary Fourier rows, exact harmonic rows, and a fixed weighted Parseval row <code>-sum w_n C_(n*pi) &lt;= 1/2</code> with <code>0 &lt;= w_n &lt;= 1</code>. The underlying Parseval energy inequality is not new; the improvement comes from the optimized non-rectangular spectral window inside Price's mean-conditioned certificate framework.</p><p>The frozen center certificate is checked by two separate implementations developed within this project: a standalone direct-MPFR/C verifier with directed rounding and sixth-order Taylor enclosures, and an independent <code>mpmath.iv</code> verifier with a separate implementation and subdivision strategy. This is not an external third-party audit. The LP/frequency search used to discover the certificate is outside the trusted proof path.</p><p><strong>Licensing scope.</strong> The MIT license covers material authored for this repository. The <code>vendor/price/</code> directory is redistributed upstream material retained for provenance and is not relicensed by this deposit.</p>",
+  "description": "<p>Proof note and frozen computer-assisted proof package for the lower bound <code>c_E &gt; 0.38056070</code> for Erdos' minimum-overlap constant.</p><p>The proof retains Liam Price's certified Arb bounds for 170 noncentral mean bins and replaces the two binding center bins. The authoritative center proof object is a standalone finite-decimal combined certificate: one second-moment multiplier, 80 ordinary cosine multipliers, one positive weighted-Parseval budget, and 400 combined harmonic coefficients. Exact rational validation checks that every combined coefficient satisfies the condition needed for a decomposition into a valid weighted Parseval row and nonnegative exact-harmonic rows.</p><p>The center integral is then certified by a direct-MPFR/C verifier using directed rounding, sixth-order Taylor enclosures, a seventh-derivative remainder, and exact aggregation of the 32 rigorous chunk bounds. The LP/frequency search and historical Python interval experiments are outside the trusted proof path. This release is not an external third-party audit.</p><p><strong>Licensing scope.</strong> The MIT license covers material authored for this repository. The <code>vendor/price/</code> directory is redistributed upstream material retained for provenance and is not relicensed by this deposit.</p>",
   "license": "mit",
   "access_right": "open",
-  "creators": [{"name": "Deng, Haowen"}],
+  "creators": [
+    {
+      "name": "Deng, Haowen"
+    }
+  ],
   "keywords": [
     "Erdos problem 36",
     "minimum overlap problem",
@@ -16,9 +20,25 @@
     "additive combinatorics"
   ],
   "related_identifiers": [
-    {"identifier": "10.4064/aa220728-7-6", "relation": "references", "scheme": "doi"},
-    {"identifier": "arXiv:2201.05704", "relation": "references", "scheme": "arxiv"},
-    {"identifier": "https://github.com/Leeham06972452/erdos-36-lower-bound", "relation": "isDerivedFrom", "scheme": "url"},
-    {"identifier": "https://github.com/occisn/erdos-36-certified-lower-bound", "relation": "references", "scheme": "url"}
+    {
+      "identifier": "10.4064/aa220728-7-6",
+      "relation": "references",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "arXiv:2201.05704",
+      "relation": "references",
+      "scheme": "arxiv"
+    },
+    {
+      "identifier": "htttps://github.com/Leeham06972452/erdos-36-lower-bound",
+      "relation": "isDerivedFrom",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://github.com/occisn/erdos-36-certified-lower-bound",
+      "relation": "references",
+      "scheme": "url"
+    }
   ]
 }

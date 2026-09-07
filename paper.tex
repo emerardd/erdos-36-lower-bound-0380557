@@ -37,15 +37,16 @@ a hard spectral cutoff with a fixed weighted Parseval row
  -\sum_{n=1}^{400}w_n C_{n\pi}\le\frac12,
  \qquad 0\le w_n\le1,
 \]
-and by adding exact harmonic rows $C_{n\pi}\le0$.  The frozen certificate has
-one second-moment multiplier, 80 ordinary cosine multipliers, one weighted
-Parseval multiplier, and 216 harmonic multipliers.  Two independent interval
-implementations verify the same frozen proof object.  A direct MPFR calculation
-gives the rigorous upper bound $2.62770156549654007831\ldots$ for
-$\int q_+$; an independent \texttt{mpmath.iv} verifier gives
+and by combining the weighted-Parseval and exact harmonic rows into 400
+finite-decimal coefficients $c_n$.  The frozen proof object contains one
+second-moment multiplier, 80 ordinary cosine multipliers, one positive
+weighted-Parseval budget $\lambda_W$, and 400 coefficients satisfying
+$c_n\le\lambda_W$.  This inequality is sufficient for a valid decomposition
+$c_n=\lambda_Ww_n-\eta_n$ with $0\le w_n\le1$ and $\eta_n\ge0$.
+A direct MPFR verification gives
 \[
  \int_{-2}^{2}q_+(t)\dd t
- \le 2.62770156515276293334556455703
+ \le 2.627701565496540078311925225883\ldots
  <\frac1{0.38056070}.
 \]
 The optimizer used to discover the certificate is outside the trusted proof
@@ -180,7 +181,7 @@ certificate.
 Suppose $p$ satisfies finitely many valid inequalities
 $\int p\phi_j\le B_j$.  For $\lambda_j\ge0$ put
 \[
- q(t)=1+\sum_j\lambda_j(B_j-\phi_j(t)),
+ q(t)=1+\sumjj\lambda_j(B_j-\phi_j(t)),
  \qquad q_+(t)=\max(q(t),0).
 \]
 Then
@@ -198,69 +199,57 @@ Price's 172-bin cover has the binding pair
 \[
  I_-=[-1/320,0],\qquad I_+=[0,1/320].
 \]
-The machine-readable proof object
-\path{certificate/weighted_center_certificate_038056070.json}
-replaces precisely these two bins.  It contains exact decimal strings for
+The authoritative machine-readable proof object is
+\path{certificate/weighted_center_combined_038056070.txt}.
+It contains exact finite-decimal strings for
 \begin{itemize}
 \item one nonnegative second-moment multiplier $\lambda_2$;
 \item 80 nonnegative ordinary cosine multipliers $\lambda_\xi$;
-\item one nonnegative weighted-Parseval multiplier $\lambda_W$ and 400 fixed
-weights $0\le w_n\le1$;
-\item 216 nonnegative exact-harmonic multipliers $\eta_n$.
+\item one positive weighted-Parseval budget $\lambda_W$;
+\item 400 combined coefficients $c_1,\ldots,c_{400}$ satisfying
+      $c_n\le\lambda_W$.
 \end{itemize}
 The associated even trigonometric polynomial is
 \begin{align*}
 q(t)=1&+\lambda_2(B_2-t^2)
 +\sum_{\xi\in\Xi}\lambda_\xi(\sinc^2\xi-\cos(\xi t))\\
-&+\lambda_W\left(\frac12+\sum_{n=1}^{400}w_n\cos(n\pi t)\right)
--\sum_{n\in\mathcal N}\eta_n\cos(n\pi t).
+&+\frac{\lambda_W}{2}+\sum_{n=1}^{400}c_n\cos(n\pi t).
 \end{align*}
-All rows are valid on both center bins by Lemmas
-\ref{lem:m2}, \ref{lem:cos}, and \ref{lem:wp}.  The optimizer used to find the
-coefficients is not needed to check any of these facts.
+The combined form is itself a valid proof object.  Indeed, for every $n$ define
+\[
+ (w_n,\eta_n)=
+ \begin{cases}
+ (c_n/\lambda_W,0),&c_n\ge0,\\
+ (0,-c_n),&c_n<0.
+ \end{cases}
+\]
+Then $0\le w_n\le1$, $\eta_n\ge0$, and
+$c_n=\lambda_Ww_n-\eta_n$.  Consequently the last line of $q$ is exactly the
+sum of a valid weighted-Parseval row and nonnegative multiples of the exact
+harmonic rows $C_{n\pi}\le0$.  The script
+\path{code/check_weighted_combined_certificate.py} verifies the finite-decimal
+sign conditions, the complete index set $1,\ldots,400$, and
+$c_n\le\lambda_W$ using exact rational arithmetic.  The optimizer used to find
+the coefficients is not needed for this check.
 
-\section{Two independent interval verifications}
-The release contains two implementations that read or embed the same frozen
-proof object but use different interval libraries and subdivision strategies.
-Floating root searches, when used, only propose subdivisions and have no
-logical role.
-
-\subsection{Direct MPFR path}
+\section{Certified direct-MPFR verification}
 \texttt{code/verify\_weighted\_center\_mpfr.c} uses MPFR with explicit directed
-rounding and no interval library shared with the Python implementation.  At a
-cell center it encloses $q,q',\ldots,q^{(6)}$ and uses a global seventh-derivative
-bound for the Taylor remainder.  Cells proved positive are integrated with the
-explicit elementary antiderivative of $q$; terminal ambiguous cells are charged
-conservatively by their width times a rigorous upper bound for $q$.  The 32
-archived decimal subintervals cover $[0,2]$ exactly, and the runner parses each
-printed upward-rounded bound as an exact rational before summing and doubling
-by evenness.  A full reproduction gives
+rounding.  At a cell center it encloses $q,q',\ldots,)^{(6)}$ and uses a global
+seventh-derivative bound for the Taylor remainder.  Cells proved positive are
+integrated with the explicit elementary antiderivative of $q$; terminal
+ambiguous cells are charged conservatively by their width times a rigorous upper
+bound for $q$.  The 32 subinterval endpoints in
+\path{verification/weighted_038056070_center_manifest.csv} cover $[0,2]$
+exactly.  The runner recomputes every chunk from the frozen combined
+certificate, parses each printed upward-rounded bound as an exact rational, and
+then sums and doubles by evenness.  A clean reproduction gives
 \begin{equation}\label{eq:mpfr}
  \int_{-2}^{2}q_+(t)\dd t
  \le 2.627701565496540078311925225883\ldots
  <\frac1{0.38056070}.
 \end{equation}
-The direct-MPFR path reads a compact terminating-decimal coefficient transcription
-derived from the frozen JSON proof object.
-\path{code/check_weighted_mpfr_certificate_match.py} verifies that transcription
-against the JSON certificate before the release check is accepted.
-
-\subsection{Independent \texttt{mpmath.iv} path}
-\texttt{code/verify\_weighted\_center\_mpmath.py} independently reconstructs
-all ordinary Fourier right-hand sides using \texttt{mpmath.iv}.  Its 32-piece
-manifest uses third-order Taylor bounds on the main mass and sixth-order Taylor
-bounds in the high-frequency tail.  Exact rational aggregation gives
-\begin{equation}\label{eq:mpmath}
- \int_{-2}^{2}q_+(t)\dd t
- \le 2.62770156515276293334556455703.
-\end{equation}
-Since
-\[
- \frac1{0.38056070}
- =2.62770170435360246079009209306\ldots,
-\]
-the certified $D$-side margin in this second implementation is
-$1.392008395\times10^{-7}$.  Thus every admissible $p$ with
+More precisely, the $D$-side margin against $1/0.38056070$ is greater than
+$1.38857\times10^{-7}$.  Thus every admissible $p$ with
 $\mu\in I_-\cup I_+$ satisfies
 \[
  \|p\|_\infty>0.38056070.
@@ -290,28 +279,27 @@ The Erd\H{o}s minimum-overlap constant satisfies
 \end{theorem}
 \begin{proof}
 Every mean $\mu\in[-1,1]$ belongs to Price's 172-bin cover.  On the two center
-bins, \eqref{eq:mpmath} and Lemma~\ref{lem:dual} give the stated bound.  On every
+bins, \eqref{eq:mpfr} and Lemma~\ref{lem:dual} give the stated bound.  On every
 other bin the reused Arb certificate gives the stronger noncentral bound above.
 Hence $c_{\rm cont}>0.38056070$, and Lemma~\ref{lem:dc} implies the theorem.
 \end{proof}
 
 \section{Reproducibility and trust model}
-The trusted finite data are the frozen JSON certificate, the vendored Price Arb
-reports for the 170 noncentral bins, and the source code of the two interval
-verifiers.  The LP search and floating-point continuous integration are
-exploratory only.
+The trusted finite data are the standalone combined center certificate, the
+vendored Price Arb reports for the 170 noncentral bins, and the source code of
+the exact certificate checker and direct-MPFR verifier.  The LP search,
+floating-point continuous integration, and historical Python interval
+experiments are exploratory only.
 
 The release provides:
 \begin{itemize}
-\item exact certificate validation, including $0\le w_n\le1$ and nonnegative
-multipliers;
+\item exact rational validation of the combined certificate, including
+      $c_n\le\lambda_W$ for all $1\le n\le400$;
 \item a direct-MPFR verifier and exact chunk aggregator;
-\item an independent \texttt{mpmath.iv} verifier with a separate manifest and
-exact rational aggregation;
 \item a target check for all 170 noncentral Arb reports;
 \item SHA-256 hashes for the release files and a reproducible PDF build.
 \end{itemize}
-The two implementations were developed within the same project; this is not a
+The center verifier was developed within the same project; this is not a
 third-party audit.  External reproduction remains desirable.
 
 \paragraph{Use of AI.}

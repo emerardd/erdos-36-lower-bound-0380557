@@ -14,65 +14,53 @@ for Erdős' minimum-overlap problem.
 
 The proof keeps Liam Price's Arb-certified bounds for 170 noncentral mean bins
 and replaces the two binding center bins with a stronger frozen dual certificate.
-The center certificate uses
+The center proof object is stored in combined spectral form.  It contains
 
-- the exact second-moment row;
-- 80 ordinary cosine rows;
-- one fixed weighted Parseval row
-  `-sum_{n=1}^{400} w_n C_{n*pi} <= 1/2`, with `0 <= w_n <= 1`;
-- 216 exact harmonic rows `C_{n*pi} <= 0`.
+- the exact second-moment multiplier;
+- 80 nonnegative ordinary cosine multipliers;
+- one positive weighted-Parseval budget `lambda_W`;
+- 400 exact combined harmonic coefficients `c_n`, each satisfying
+  `c_n <= lambda_W`.
 
-The weighted row is a direct consequence of the existing Parseval energy bound
-`sum |H(n*pi)|^2 <= 1/2`; the novelty is the optimized non-rectangular spectral
-window inside Price's mean-conditioned certificate framework.
+The last condition is enough to recover a valid weighted-Parseval/harmonic-row
+decomposition.  For `c_n >= 0`, take `w_n = c_n/lambda_W` and harmonic
+multiplier `eta_n = 0`; for `c_n < 0`, take `w_n = 0` and
+`eta_n = -c_n`.  Hence `0 <= w_n <= 1`, `eta_n >= 0`, and
+`c_n = lambda_W*w_n - eta_n` exactly.  This is checked with exact rational
+arithmetic before interval verification.
 
-## Two interval verification paths
+The weighted Parseval row itself is the consequence
+`-sum w_n C_{n*pi} <= 1/2` of White's Parseval energy bound.  The improvement
+comes from using a frozen non-rectangular spectral combination inside Price's
+mean-conditioned certificate framework.
 
-Both implementations verify the same frozen JSON proof object. They were developed
-within this project and therefore do **not** constitute an external third-party
-audit.
+## Certified center verification
 
-### Direct MPFR/C
+`code/check_weighted_combined_certificate.py` validates the standalone
+finite-decimal proof object
+`certificate/weighted_center_combined_038056070.txt`, including all multiplier
+sign conditions, the exact PI index set `1..400`, and `c_n <= lambda_W` for every
+combined coefficient.
 
-`code/verify_weighted_center_mpfr.c` uses MPFR directed rounding, sixth-order
-Taylor sign enclosures with a seventh-derivative remainder, and an explicit
-antiderivative on cells proved positive. It uses no `mpmath`, NumPy, SciPy,
-Arb, root finder, or LP solver.
+`code/verify_weighted_center_mpfr.c` then uses MPFR directed rounding,
+sixth-order Taylor sign enclosures with a seventh-derivative remainder, and an
+explicit antiderivative on cells proved positive.  Archived integral values are
+not trusted inputs: `code/run_weighted_mpfr_verification.py` recomputes all 32
+center subintervals and aggregates the printed upward-rounded bounds as exact
+rationals.
 
-A full 32-piece reproduction gives
+The clean-checkout release verification gives
 
 ```text
-D_upper: 2.627701565496540078311925225882431013359788494257...
-target:  0.38056070
-margin_D: 1.38857062382478166867179201467e-7
+D_upper: 2.627701565496540078311925225882434229578618824422997827900570...
+target_D: 2.627701704353602460790092093061632480705443310357585531033551...
+margin_D: 0.000000138857062382478166867179198251126824485934587703132981...
 CERTIFIED True
 ```
 
-The C verifier does not rely on a separately maintained coefficient copy.
-`code/generate_weighted_mpfr_coefficients.py` derives the compact C input from
-`certificate/weighted_center_certificate_038056070.json` on every run using
-exact `Fraction` arithmetic, so the frozen JSON is the single coefficient source
-of truth.
-
-### Independent `mpmath.iv`
-
-`code/verify_weighted_center_mpmath.py` reconstructs the certificate separately
-using `mpmath.iv`. It uses third-order Taylor enclosures on the main mass and
-sixth-order enclosures in the high-frequency tail. Floating root searches, when
-used to propose subdivisions, are outside the trusted path: every cell is still
-validated by interval arithmetic.
-
-The archived verification gives
-
-```text
-D_upper: 2.62770156515276293334556455703
-target_D: 2.62770170435360246079009209306...
-margin_D: 1.39200839527444527536031632481e-7
-CERTIFIED True
-```
-
-The implied reciprocal of that certified upper bound is approximately
-`0.380560720159964`, so the theorem target deliberately keeps margin.
+Thus the center certificate proves `c_E > 0.38056070` with a positive rigorous
+margin.  Earlier JSON-decomposition and `mpmath.iv` experiments were useful
+during development but are not part of the release proof path.
 
 ## Noncentral bins
 
@@ -89,45 +77,35 @@ vendored Arb balls against `0.38056070`.
 
 ## Frozen proof object
 
-- `certificate/weighted_center_certificate_038056070.json` - exact decimal
-  multipliers and the 400 fixed spectral weights.
-- `verification/weighted_038056070_mpmath_manifest.csv` - exact 32-piece
-  coverage used by the independent Python verifier.
-- `verification/weighted_038056070_mpmath_result.txt` - archived Python interval
-  transcript summary.
-- `verification/weighted_038056070_mpfr_result.txt` - archived direct-MPFR
-  reproduction summary.
+- `certificate/weighted_center_combined_038056070.txt` - the authoritative
+  finite-decimal center certificate: `T2`, `WINDOW`, 80 `COS` rows, and 400
+  combined `PI` coefficients.
+- `verification/weighted_038056070_center_manifest.csv` - the exact 32-piece
+  partition of `[0,2]` used only to schedule rigorous MPFR subproblems.
+- `code/check_weighted_combined_certificate.py` - exact-rational certificate
+  validity check.
+- `code/verify_weighted_center_mpfr.c` and
+  `code/run_weighted_mpfr_verification.py` - the rigorous center verifier and
+  exact aggregator.
 
-The LP/search code under `experiments/` is exploratory and is not part of the
-trusted proof path.
+The LP/search code under `experiments/` and historical development certificates
+are exploratory and are not part of the trusted proof path.
 
 ## Reproduce the center certificate
 
-Python 3.10+ is recommended.
-
-```bash
-python -m venv .venv
-source .venv/bin/activate        # Linux/macOS
-# .venv\Scripts\Activate.ps1     # Windows PowerShell
-pip install -r requirements.txt
-
-python code/run_weighted_mpmath_verification.py --jobs 8
-```
-
-For the direct MPFR path, install a C compiler plus MPFR/GMP development
+Python 3.10+ and a C compiler are required.  Install MPFR/GMP development
 headers (`libmpfr-dev libgmp-dev` on Debian/Ubuntu, `brew install mpfr` on
 macOS), then run
 
 ```bash
+python code/check_weighted_combined_certificate.py
 python code/run_weighted_mpfr_verification.py --jobs 8
 ```
 
-The runner first generates its temporary coefficient stream exactly from the
-frozen JSON certificate, then compiles and runs the C verifier. The supported
-release/CI path compiles against the real `<mpfr.h>`. A guarded `MPFR_SELFDECL`
-fallback exists only for LP64 Linux development environments that have the
-runtime library but not the header; CI rejects that fallback as an authoritative
-release check.
+The supported release/CI path compiles against the real `<mpfr.h>`.  A guarded
+`MPFR_SELFDECL` fallback exists only for LP64 Linux development environments
+that have the runtime library but not the header; CI rejects that fallback as an
+authoritative release check.
 
 To check the noncentral splice:
 
@@ -159,15 +137,16 @@ and `vendor/price/README.md`.
 
 ## Trust model
 
-The trusted path consists of the frozen JSON certificate, rigorous interval
-arithmetic in either verifier, exact aggregation of chunk bounds, and the
-vendored noncentral Arb reports. The LP optimizer, exploratory frequency search,
-and ordinary floating-point continuous integration are not needed to verify the
+The trusted path consists of the standalone combined center certificate, its
+exact-rational validity checker, the direct-MPFR interval verifier with exact
+chunk aggregation, and the vendored noncentral Arb reports.  The LP optimizer,
+exploratory frequency search, ordinary floating-point continuous integration,
+and historical Python interval experiments are not needed to verify the
 theorem.
 
-The two verifier implementations are separate code paths but were produced
-within the same project. External reproduction by another researcher is still
-welcome and should be described separately from this internal dual verification.
+The center verifier was developed within this project; it is not a third-party
+audit.  External reproduction by another researcher remains desirable and
+should be described separately if obtained.
 
 ## References
 
